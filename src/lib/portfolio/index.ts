@@ -5,3 +5,12 @@ export {
   type PositionWithGreeks,
   type PortfolioSummary,
 } from './position.js';
+
+export {
+  LiquidationEngine,
+  liquidationEngine,
+  type MarginRequirement,
+  type LiquidationRisk,
+  type LiquidationEvent,
+  type RiskConfig,
+} from './liquidation.js';

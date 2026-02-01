@@ -405,6 +405,43 @@ export class DatabaseService {
   }
 
   // ============================================================================
+  // PRICE HISTORY
+  // ============================================================================
+
+  async recordPrice(symbol: string, price: number, confidence?: number): Promise<void> {
+    const { error } = await supabase
+      .from('price_history')
+      .insert({
+        symbol,
+        price,
+        confidence,
+      });
+
+    if (error) {
+      console.error('Failed to record price:', error.message);
+    }
+  }
+
+  async getPriceHistory(symbol: string, limit = 100): Promise<{ price: number; timestamp: string }[]> {
+    const { data, error } = await supabase
+      .from('price_history')
+      .select('price, timestamp')
+      .eq('symbol', symbol)
+      .order('timestamp', { ascending: false })
+      .limit(limit);
+
+    if (error) {
+      console.error('Failed to get price history:', error.message);
+      return [];
+    }
+
+    return (data || []).map((row: { price: number; timestamp: string }) => ({
+      price: row.price,
+      timestamp: row.timestamp,
+    }));
+  }
+
+  // ============================================================================
   // STATS
   // ============================================================================
 

@@ -22,6 +22,8 @@
     "test:db": "tsx src/test-db.ts",
     "test:flow": "tsx src/test-full-flow.ts",
     "test:sim": "tsx src/test-simulation.ts",
+    "test:market": "tsx src/test-open-market.ts",
+    "test:tables": "tsx src/test-all-tables.ts",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit"
   },

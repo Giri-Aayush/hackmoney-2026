@@ -2,7 +2,7 @@ import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { createServer, Server as HttpServer } from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
-import { priceRouter, optionsRouter, portfolioRouter, strategiesRouter } from './routes/index.js';
+import { priceRouter, optionsRouter, portfolioRouter, strategiesRouter, marketRouter } from './routes/index.js';
 import { state } from './state.js';
 import { WsPriceUpdate } from './types.js';
 
@@ -74,6 +74,7 @@ export class OptiChannelServer {
           options: '/api/options',
           portfolio: '/api/portfolio',
           strategies: '/api/strategies',
+          market: '/api/market',
         },
         websocket: this.config.enableWebSocket ? `ws://localhost:${this.config.port}` : null,
       });
@@ -84,6 +85,7 @@ export class OptiChannelServer {
     this.app.use('/api/options', optionsRouter);
     this.app.use('/api/portfolio', portfolioRouter);
     this.app.use('/api/strategies', strategiesRouter);
+    this.app.use('/api/market', marketRouter);
 
     // 404 handler
     this.app.use((_req: Request, res: Response) => {
