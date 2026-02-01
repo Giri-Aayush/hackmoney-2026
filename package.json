@@ -19,6 +19,9 @@
     "test:portfolio": "tsx src/test-portfolio.ts",
     "test:strategies": "tsx src/test-strategies.ts",
     "test:api": "tsx src/test-api.ts",
+    "test:db": "tsx src/test-db.ts",
+    "test:flow": "tsx src/test-full-flow.ts",
+    "test:sim": "tsx src/test-simulation.ts",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit"
   },
@@ -32,8 +35,10 @@
   "author": "Aayush",
   "license": "MIT",
   "dependencies": {
+    "@circle-fin/developer-controlled-wallets": "^10.1.0",
     "@erc7824/nitrolite": "^0.5.3",
     "@pythnetwork/hermes-client": "^1.4.0",
+    "@supabase/supabase-js": "^2.93.3",
     "cors": "^2.8.6",
     "dotenv": "^16.4.0",
     "express": "^5.2.1",
