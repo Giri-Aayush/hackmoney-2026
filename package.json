@@ -13,6 +13,8 @@
     "test:run": "vitest run",
     "test:connection": "tsx src/test-connection.ts",
     "test:options": "tsx src/test-options.ts",
+    "test:trading": "tsx src/test-trading.ts",
+    "test:marketplace": "tsx src/test-marketplace.ts",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit"
   },

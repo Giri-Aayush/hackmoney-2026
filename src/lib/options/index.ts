@@ -1,4 +1,5 @@
 export { OptionsEngine } from './engine.js';
+export { OptionsOrderBook, type ListedOption, type OrderBookStats } from './orderbook.js';
 export {
   type Option,
   type OptionType,
