@@ -12,6 +12,7 @@
     "test": "vitest",
     "test:run": "vitest run",
     "test:connection": "tsx src/test-connection.ts",
+    "test:options": "tsx src/test-options.ts",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit"
   },
@@ -26,7 +27,7 @@
   "license": "MIT",
   "dependencies": {
     "@erc7824/nitrolite": "^0.5.3",
-    "@pythnetwork/hermes-client": "^1.0.0",
+    "@pythnetwork/hermes-client": "^1.4.0",
     "dotenv": "^16.4.0",
     "viem": "^2.0.0",
     "ws": "^8.16.0"
