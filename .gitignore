@@ -1,0 +1,43 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Test coverage
+coverage/
+
+# Foundry (contracts)
+contracts/cache/
+contracts/out/
+contracts/broadcast/
+
+# Next.js (frontend)
+web/.next/
+web/out/
+
+# Misc
+*.tgz
+.turbo
+
+# PRD documents
+OptiChannel_PRD.md
+OptiChannel_PRD.docx
