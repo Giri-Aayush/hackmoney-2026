@@ -12,7 +12,6 @@
 
 import { Router, Request, Response } from 'express';
 import { Hex, Address } from 'viem';
-import { optionsMarket } from '../../lib/options/index.js';
 import { liquidationEngine } from '../../lib/portfolio/index.js';
 import { state } from '../state.js';
 import { blackScholes } from '../../lib/pricing/index.js';
@@ -28,7 +27,7 @@ router.get('/depth/:optionId', (req: Request, res: Response) => {
     const optionId = req.params.optionId as Hex;
     const levels = parseInt(req.query.levels as string) || 10;
 
-    const depth = optionsMarket.getOrderBookDepth(optionId, levels);
+    const depth = state.market.getOrderBookDepth(optionId, levels);
 
     res.json({
       success: true,
@@ -82,7 +81,7 @@ router.get('/prices/:optionId', async (req: Request, res: Response) => {
     });
     const theoreticalPrice = bsResult.price;
 
-    const prices = optionsMarket.getMarketPrices(optionId, theoreticalPrice, spotPrice);
+    const prices = state.market.getMarketPrices(optionId, theoreticalPrice, spotPrice);
 
     res.json({
       success: true,
@@ -129,7 +128,7 @@ router.get('/ticker/:optionId', async (req: Request, res: Response) => {
       optionType: option.optionType,
     });
 
-    const ticker = optionsMarket.getTicker(
+    const ticker = state.market.getTicker(
       option,
       bsResult.price,
       spotPrice,
@@ -156,7 +155,7 @@ router.get('/ticker/:optionId', async (req: Request, res: Response) => {
  */
 router.get('/open-interest', (_req: Request, res: Response) => {
   try {
-    const openInterest = optionsMarket.getAllOpenInterest();
+    const openInterest = state.market.getAllOpenInterest();
 
     const totalCallOI = openInterest.reduce((sum, oi) => sum + oi.callOI, 0);
     const totalPutOI = openInterest.reduce((sum, oi) => sum + oi.putOI, 0);
@@ -189,7 +188,7 @@ router.get('/open-interest', (_req: Request, res: Response) => {
 router.get('/volume', (req: Request, res: Response) => {
   try {
     const optionId = req.query.optionId as Hex | undefined;
-    const stats = optionsMarket.getVolumeStats(optionId);
+    const stats = state.market.getVolumeStats(optionId);
 
     res.json({
       success: true,
@@ -213,7 +212,7 @@ router.get('/trades', (req: Request, res: Response) => {
     const optionId = req.query.optionId as Hex | undefined;
     const limit = parseInt(req.query.limit as string) || 50;
 
-    const trades = optionsMarket.getRecentTrades(optionId, limit);
+    const trades = state.market.getRecentTrades(optionId, limit);
 
     res.json({
       success: true,
@@ -250,7 +249,7 @@ router.post('/orders/limit', (req: Request, res: Response) => {
       return;
     }
 
-    const order = optionsMarket.placeLimitOrder({
+    const order = state.market.placeLimitOrder({
       optionId,
       trader: walletAddress,
       side,
@@ -291,7 +290,7 @@ router.post('/orders/market', (req: Request, res: Response) => {
       return;
     }
 
-    const result = optionsMarket.placeMarketOrder({
+    const result = state.market.placeMarketOrder({
       optionId,
       trader: walletAddress,
       side,
@@ -329,7 +328,7 @@ router.delete('/orders/:orderId', (req: Request, res: Response) => {
     }
 
     const orderId = req.params.orderId as Hex;
-    const success = optionsMarket.cancelOrder(orderId, walletAddress);
+    const success = state.market.cancelOrder(orderId, walletAddress);
 
     if (!success) {
       res.status(400).json({ success: false, error: 'Cannot cancel order' });
@@ -362,7 +361,7 @@ router.get('/orders', (req: Request, res: Response) => {
     }
 
     const status = req.query.status as string | undefined;
-    const orders = optionsMarket.getTraderOrders(
+    const orders = state.market.getTraderOrders(
       walletAddress,
       status as 'open' | 'filled' | undefined
     );

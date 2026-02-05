@@ -1,6 +1,7 @@
 // Yellow Network SDK wrapper for OptiChannel
 export * from './client.js';
 export * from './session.js';
+export * from './trading.js';
 
 // Re-export commonly used types and helpers from nitrolite
 export {

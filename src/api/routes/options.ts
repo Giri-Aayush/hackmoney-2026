@@ -4,6 +4,7 @@ import { state } from '../state.js';
 import { ApiResponse, OptionResponse, CreateOptionRequest } from '../types.js';
 import { blackScholes } from '../../lib/pricing/index.js';
 import { Option } from '../../lib/options/types.js';
+import { OptionsChain } from '../../lib/options/protocol-options.js';
 
 const router = Router();
 
@@ -66,6 +67,7 @@ async function enrichOption(option: Option): Promise<OptionResponse> {
 router.get('/', async (req: Request, res: Response) => {
   try {
     const { type, minStrike, maxStrike } = req.query;
+    console.log('   [Options] Fetching available options...');
 
     const options = state.orderBook.getAvailableOptions({
       optionType: type as 'call' | 'put' | undefined,
@@ -74,6 +76,7 @@ router.get('/', async (req: Request, res: Response) => {
     });
 
     const enrichedOptions = await Promise.all(options.map(enrichOption));
+    console.log(`   [Options] Found ${enrichedOptions.length} available options`);
 
     const response: ApiResponse<OptionResponse[]> = {
       success: true,
@@ -145,6 +148,91 @@ router.get('/puts', async (_req: Request, res: Response) => {
 });
 
 /**
+ * GET /api/options/protocol
+ * Get Binance-style options chain (protocol-created options)
+ * NOTE: This route MUST come before /:id to avoid "protocol" being matched as an ID
+ */
+router.get('/protocol', async (req: Request, res: Response) => {
+  try {
+    const { expiry } = req.query;
+    console.log('   [Options] Fetching protocol options chain...');
+
+    const chain = await state.protocolOptions.getOptionsChain(expiry as string | undefined);
+
+    console.log(`   [Options] Found ${chain.chain.length} strike levels, spot: $${chain.spotPrice.toFixed(2)}`);
+
+    const response: ApiResponse<OptionsChain> = {
+      success: true,
+      data: chain,
+      timestamp: Date.now(),
+    };
+
+    res.json(response);
+  } catch (error) {
+    const response: ApiResponse<null> = {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to fetch options chain',
+      timestamp: Date.now(),
+    };
+    res.status(500).json(response);
+  }
+});
+
+/**
+ * POST /api/options/protocol/refresh
+ * Refresh protocol options if price has moved significantly
+ */
+router.post('/protocol/refresh', async (_req: Request, res: Response) => {
+  try {
+    console.log('   [Options] Refreshing protocol options...');
+
+    const count = await state.refreshProtocolOptionsIfNeeded();
+
+    console.log(`   [Options] Refreshed: ${count} new options created`);
+
+    const response: ApiResponse<{ newOptions: number }> = {
+      success: true,
+      data: { newOptions: count },
+      timestamp: Date.now(),
+    };
+
+    res.json(response);
+  } catch (error) {
+    const response: ApiResponse<null> = {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to refresh options',
+      timestamp: Date.now(),
+    };
+    res.status(500).json(response);
+  }
+});
+
+/**
+ * GET /api/options/stats/summary
+ * Get order book statistics
+ */
+router.get('/stats/summary', async (_req: Request, res: Response) => {
+  try {
+    const stats = state.orderBook.getStats();
+
+    const response: ApiResponse<typeof stats> = {
+      success: true,
+      data: stats,
+      timestamp: Date.now(),
+    };
+
+    res.json(response);
+  } catch (error) {
+    const response: ApiResponse<null> = {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to fetch stats',
+      timestamp: Date.now(),
+    };
+    res.status(500).json(response);
+  }
+});
+
+/**
  * GET /api/options/:id
  * Get specific option by ID
  */
@@ -199,6 +287,10 @@ router.post('/', async (req: Request, res: Response) => {
       return res.status(400).json(response);
     }
 
+    console.log(`   [Options] Creating ${body.optionType.toUpperCase()} option...`);
+    console.log(`   [Options]   Strike: $${body.strikePrice}, Premium: $${body.premium}`);
+    console.log(`   [Options]   Amount: ${body.amount} ETH, Expiry: ${body.expiryMinutes} min`);
+
     const option = await state.orderBook.listOption(writer, {
       underlying: body.underlying,
       strikePrice: body.strikePrice,
@@ -209,6 +301,7 @@ router.post('/', async (req: Request, res: Response) => {
     });
 
     const enrichedOption = await enrichOption(option);
+    console.log(`   [Options] ✓ Created option ${option.id.slice(0, 10)}...`);
 
     const response: ApiResponse<OptionResponse> = {
       success: true,
@@ -218,6 +311,7 @@ router.post('/', async (req: Request, res: Response) => {
 
     res.status(201).json(response);
   } catch (error) {
+    console.log(`   [Options] ✗ Failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     const response: ApiResponse<null> = {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to create option',
@@ -245,8 +339,13 @@ router.post('/:id/buy', async (req: Request, res: Response) => {
       return res.status(400).json(response);
     }
 
+    console.log(`   [Options] Buying option ${id.slice(0, 10)}...`);
+    console.log(`   [Options]   Buyer: ${buyer.slice(0, 10)}...`);
+
     const option = await state.orderBook.buyOption(id as Hex, buyer);
     const enrichedOption = await enrichOption(option);
+
+    console.log(`   [Options] ✓ Option purchased! Premium: $${enrichedOption.premium}`);
 
     const response: ApiResponse<OptionResponse> = {
       success: true,
@@ -256,6 +355,7 @@ router.post('/:id/buy', async (req: Request, res: Response) => {
 
     res.json(response);
   } catch (error) {
+    console.log(`   [Options] ✗ Buy failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     const response: ApiResponse<null> = {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to buy option',
@@ -283,7 +383,12 @@ router.post('/:id/exercise', async (req: Request, res: Response) => {
       return res.status(400).json(response);
     }
 
+    console.log(`   [Options] Exercising option ${id.slice(0, 10)}...`);
+    console.log(`   [Options]   Holder: ${holder.slice(0, 10)}...`);
+
     const result = await state.orderBook.exerciseOption(id as Hex, holder);
+
+    console.log(`   [Options] ✓ Option exercised! Payout: $${result.payout.toFixed(2)}`);
 
     const response: ApiResponse<{ payout: number }> = {
       success: true,
@@ -293,34 +398,10 @@ router.post('/:id/exercise', async (req: Request, res: Response) => {
 
     res.json(response);
   } catch (error) {
+    console.log(`   [Options] ✗ Exercise failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     const response: ApiResponse<null> = {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to exercise option',
-      timestamp: Date.now(),
-    };
-    res.status(500).json(response);
-  }
-});
-
-/**
- * GET /api/options/stats
- * Get order book statistics
- */
-router.get('/stats/summary', async (_req: Request, res: Response) => {
-  try {
-    const stats = state.orderBook.getStats();
-
-    const response: ApiResponse<typeof stats> = {
-      success: true,
-      data: stats,
-      timestamp: Date.now(),
-    };
-
-    res.json(response);
-  } catch (error) {
-    const response: ApiResponse<null> = {
-      success: false,
-      error: error instanceof Error ? error.message : 'Failed to fetch stats',
       timestamp: Date.now(),
     };
     res.status(500).json(response);

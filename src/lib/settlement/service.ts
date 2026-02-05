@@ -10,7 +10,7 @@ import {
   Account,
 } from 'viem';
 import { privateKeyToAccount } from 'viem/accounts';
-import { arbitrumSepolia } from 'viem/chains';
+import { sepolia } from 'viem/chains';
 import { config } from '../../config/index.js';
 import {
   DepositRequest,
@@ -65,9 +65,9 @@ export class SettlementService {
   constructor(contracts: ContractAddresses) {
     this.contracts = contracts;
 
-    // Create public client for reading
+    // Create public client for reading (Ethereum Sepolia)
     this.publicClient = createPublicClient({
-      chain: arbitrumSepolia,
+      chain: sepolia,
       transport: http(config.chain.rpcUrl),
     });
 
@@ -76,7 +76,7 @@ export class SettlementService {
       this.account = privateKeyToAccount(config.wallet.privateKey as Hex);
       this.walletClient = createWalletClient({
         account: this.account,
-        chain: arbitrumSepolia,
+        chain: sepolia,
         transport: http(config.chain.rpcUrl),
       });
     }
@@ -149,7 +149,7 @@ export class SettlementService {
 
     const hash = await this.walletClient.writeContract({
       account: this.account!,
-      chain: arbitrumSepolia,
+      chain: sepolia,
       address: this.contracts.usdc,
       abi: ERC20_ABI,
       functionName: 'approve',
@@ -186,7 +186,7 @@ export class SettlementService {
       // Deposit
       const hash = await this.walletClient.writeContract({
         account: this.account!,
-        chain: arbitrumSepolia,
+        chain: sepolia,
         address: this.contracts.optiChannel,
         abi: OPTICHANNEL_ABI,
         functionName: 'deposit',
@@ -215,7 +215,7 @@ export class SettlementService {
     try {
       const hash = await this.walletClient.writeContract({
         account: this.account!,
-        chain: arbitrumSepolia,
+        chain: sepolia,
         address: this.contracts.optiChannel,
         abi: OPTICHANNEL_ABI,
         functionName: 'withdraw',
@@ -251,7 +251,7 @@ export class SettlementService {
 
       const hash = await this.walletClient.writeContract({
         account: this.account!,
-        chain: arbitrumSepolia,
+        chain: sepolia,
         address: this.contracts.optiChannel,
         abi: OPTICHANNEL_ABI,
         functionName: 'settleOption',
@@ -319,9 +319,9 @@ export class SettlementService {
   }
 }
 
-// Default contract addresses (to be deployed)
+// Default contract addresses - Ethereum Sepolia
 export const DEFAULT_CONTRACTS: ContractAddresses = {
-  optiChannel: '0x0000000000000000000000000000000000000000' as Address, // TODO: Deploy
-  usdc: '0x75faf114eafb1BDbe2F0316DF893fd58CE46AA4d' as Address, // Arbitrum Sepolia USDC
-  pyth: '0x4374e5a8b9C22271E9EB878A2AA31DE97DF15DAF' as Address, // Arbitrum Sepolia Pyth
+  optiChannel: '0x7779c5E338e52Be395A2A5386f8CFBf6629f67CB' as Address, // OptiChannelSettlement on Sepolia
+  usdc: '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238' as Address, // Circle USDC on Sepolia
+  pyth: '0xDd24F84d36BF92C65F92307595335bdFab5Bbd21' as Address, // Pyth on Sepolia
 };

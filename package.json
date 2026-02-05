@@ -24,6 +24,7 @@
     "test:sim": "tsx src/test-simulation.ts",
     "test:market": "tsx src/test-open-market.ts",
     "test:tables": "tsx src/test-all-tables.ts",
+    "test:api-flow": "tsx src/test-api-flow.ts",
     "lint": "eslint src --ext .ts",
     "typecheck": "tsc --noEmit"
   },

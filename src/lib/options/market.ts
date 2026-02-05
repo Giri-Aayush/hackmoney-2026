@@ -459,6 +459,13 @@ export class OptionsMarket {
   }
 
   /**
+   * Record a trade (public method for external trade recording)
+   */
+  recordTrade(params: Omit<Trade, 'id' | 'timestamp'>): Trade {
+    return this.executeTrade(params);
+  }
+
+  /**
    * Execute a trade
    */
   private executeTrade(params: Omit<Trade, 'id' | 'timestamp'>): Trade {

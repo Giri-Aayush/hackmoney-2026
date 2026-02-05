@@ -8,16 +8,16 @@ export const config = {
     appId: process.env.YELLOW_APP_ID || '',
   },
 
-  // Blockchain
+  // Blockchain (Ethereum Sepolia)
   chain: {
-    rpcUrl: process.env.RPC_URL || 'https://sepolia-rollup.arbitrum.io/rpc',
-    chainId: parseInt(process.env.CHAIN_ID || '421614', 10),
+    rpcUrl: process.env.RPC_URL || 'https://ethereum-sepolia-rpc.publicnode.com',
+    chainId: parseInt(process.env.CHAIN_ID || '11155111', 10),
   },
 
-  // Pyth Oracle
+  // Pyth Oracle (Ethereum Sepolia)
   pyth: {
     hermesUrl: process.env.PYTH_HERMES_URL || 'https://hermes.pyth.network',
-    contractAddress: process.env.PYTH_CONTRACT_ADDRESS || '0x4374e5a8b9C22271E9EB878A2AA31DE97DF15DAF',
+    contractAddress: process.env.PYTH_CONTRACT_ADDRESS || '0xDd24F84d36BF92C65F92307595335bdFab5Bbd21',
     ethUsdPriceId: '0xff61491a931112ddf1bd8147cd1b641375f79f5825126d665480874634fd0ace',
   },
 

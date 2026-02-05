@@ -12,7 +12,7 @@ import {
   type Address,
 } from 'viem';
 import { privateKeyToAccount, type PrivateKeyAccount, sign } from 'viem/accounts';
-import { arbitrumSepolia } from 'viem/chains';
+import { sepolia } from 'viem/chains';
 import type { MessageSigner } from '@erc7824/nitrolite';
 import { config } from '../../config/index.js';
 
@@ -68,7 +68,7 @@ export function createWalletFromPrivateKey(cfg?: Partial<SignerConfig>): WalletI
     throw new Error('Private key is required. Set PRIVATE_KEY in .env file.');
   }
 
-  const chain = cfg?.chain || arbitrumSepolia;
+  const chain = cfg?.chain || sepolia;
   const rpcUrl = cfg?.rpcUrl || config.chain.rpcUrl;
 
   // Create account from private key
@@ -104,7 +104,7 @@ export function createWalletFromAccountWithKey(
 ): WalletInfo {
   const walletClient = createWalletClient({
     account,
-    chain: chain || arbitrumSepolia,
+    chain: chain || sepolia,
     transport: http(rpcUrl || config.chain.rpcUrl),
   });
 

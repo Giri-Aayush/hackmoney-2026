@@ -41,3 +41,6 @@ web/out/
 # PRD documents
 OptiChannel_PRD.md
 OptiChannel_PRD.docx
+
+# Claude Code config
+claude.md

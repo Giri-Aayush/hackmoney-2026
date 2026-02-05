@@ -2,7 +2,7 @@ import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import { createServer, Server as HttpServer } from 'http';
 import { WebSocketServer, WebSocket } from 'ws';
-import { priceRouter, optionsRouter, portfolioRouter, strategiesRouter, marketRouter } from './routes/index.js';
+import { priceRouter, optionsRouter, portfolioRouter, strategiesRouter, marketRouter, yellowRouter } from './routes/index.js';
 import { state } from './state.js';
 import { WsPriceUpdate } from './types.js';
 
@@ -22,7 +22,7 @@ export class OptiChannelServer {
 
   constructor(config: ServerConfig = {}) {
     this.config = {
-      port: config.port || 3000,
+      port: config.port || 8081,
       cors: config.cors || { origin: '*' },
       enableWebSocket: config.enableWebSocket ?? true,
       priceUpdateInterval: config.priceUpdateInterval || 5000,
@@ -46,9 +46,42 @@ export class OptiChannelServer {
     // JSON body parser
     this.app.use(express.json());
 
-    // Request logging
-    this.app.use((req: Request, _res: Response, next: NextFunction) => {
-      console.log(`[API] ${req.method} ${req.path}`);
+    // Verbose request/response logging
+    this.app.use((req: Request, res: Response, next: NextFunction) => {
+      const start = Date.now();
+      const timestamp = new Date().toISOString();
+
+      console.log('');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log(`[${timestamp}] ➜ ${req.method} ${req.path}`);
+
+      if (req.headers['x-wallet-address']) {
+        console.log(`   Wallet: ${req.headers['x-wallet-address']}`);
+      }
+
+      if (Object.keys(req.query).length > 0) {
+        console.log(`   Query: ${JSON.stringify(req.query)}`);
+      }
+
+      if (req.body && Object.keys(req.body).length > 0) {
+        console.log(`   Body: ${JSON.stringify(req.body)}`);
+      }
+
+      // Capture response
+      const originalJson = res.json.bind(res);
+      res.json = (body: unknown) => {
+        const duration = Date.now() - start;
+        const success = (body as Record<string, unknown>)?.success !== false;
+
+        console.log(`   ← ${res.statusCode} ${success ? '✓' : '✗'} (${duration}ms)`);
+
+        if (!success && (body as Record<string, unknown>)?.error) {
+          console.log(`   Error: ${(body as Record<string, unknown>).error}`);
+        }
+
+        return originalJson(body);
+      };
+
       next();
     });
   }
@@ -66,7 +99,7 @@ export class OptiChannelServer {
     // API info
     this.app.get('/api', (_req: Request, res: Response) => {
       res.json({
-        name: 'OptiChannel API',
+        name: 'Optix API',
         version: '0.1.0',
         description: 'Gasless options trading protocol API',
         endpoints: {
@@ -75,6 +108,7 @@ export class OptiChannelServer {
           portfolio: '/api/portfolio',
           strategies: '/api/strategies',
           market: '/api/market',
+          yellow: '/api/yellow',
         },
         websocket: this.config.enableWebSocket ? `ws://localhost:${this.config.port}` : null,
       });
@@ -86,6 +120,7 @@ export class OptiChannelServer {
     this.app.use('/api/portfolio', portfolioRouter);
     this.app.use('/api/strategies', strategiesRouter);
     this.app.use('/api/market', marketRouter);
+    this.app.use('/api/yellow', yellowRouter);
 
     // 404 handler
     this.app.use((_req: Request, res: Response) => {
@@ -143,7 +178,7 @@ export class OptiChannelServer {
       // Send welcome message
       ws.send(JSON.stringify({
         type: 'connected',
-        message: 'Connected to OptiChannel WebSocket',
+        message: 'Connected to Optix WebSocket',
         timestamp: Date.now(),
       }));
     });
@@ -202,6 +237,14 @@ export class OptiChannelServer {
    * Start the server
    */
   async start(): Promise<void> {
+    // Initialize protocol options (Binance-style standardized contracts)
+    try {
+      const optionsCount = await state.initializeProtocolOptions();
+      console.log(`[Server] Protocol options ready: ${optionsCount} contracts`);
+    } catch (error) {
+      console.error('[Server] Failed to initialize protocol options:', error);
+    }
+
     return new Promise((resolve) => {
       this.httpServer.listen(this.config.port, () => {
         console.log('═══════════════════════════════════════════════════════════════════');
@@ -212,6 +255,7 @@ export class OptiChannelServer {
         if (this.config.enableWebSocket) {
           console.log(`  WebSocket:   ws://localhost:${this.config.port}`);
         }
+        console.log(`  Protocol:    ${state.protocolOptions.getProtocolAddress().slice(0, 10)}...`);
         console.log('═══════════════════════════════════════════════════════════════════\n');
         resolve();
       });

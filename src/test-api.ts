@@ -4,7 +4,7 @@
  * Tests all API endpoints to verify the server is working correctly.
  */
 
-const API_URL = process.env.API_URL || 'http://localhost:3000';
+const API_URL = process.env.API_URL || 'http://localhost:8081';
 const WALLET_ADDRESS = '0x1234567890123456789012345678901234567890';
 
 interface ApiResponse<T> {

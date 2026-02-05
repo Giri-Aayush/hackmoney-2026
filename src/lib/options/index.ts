@@ -27,3 +27,10 @@ export {
   type BuyOptionMessage,
   type ExerciseOptionMessage,
 } from './types.js';
+export {
+  ProtocolOptionsGenerator,
+  type ProtocolOptionsConfig,
+  type OptionsChain,
+  type OptionsChainEntry,
+  PROTOCOL_OPTIONS_CONFIG,
+} from './protocol-options.js';

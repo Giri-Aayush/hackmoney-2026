@@ -6,7 +6,7 @@
 
 import { OptiChannelServer } from './api/index.js';
 
-const PORT = parseInt(process.env.PORT || '3000', 10);
+const PORT = parseInt(process.env.PORT || '8081', 10);
 
 const server = new OptiChannelServer({
   port: PORT,

@@ -2,6 +2,7 @@ import { Address, Hex } from 'viem';
 import { Option, OptionType, CreateOptionParams } from './types.js';
 import { OptionsEngine } from './engine.js';
 import { PythClient } from '../pyth/index.js';
+import { OptionsMarket } from './market.js';
 
 export interface ListedOption {
   option: Option;
@@ -21,9 +22,11 @@ export class OptionsOrderBook {
   private listings: Map<Hex, ListedOption> = new Map();
   private enginesByWriter: Map<Address, OptionsEngine> = new Map();
   private pythClient: PythClient;
+  private market: OptionsMarket | null;
 
-  constructor(pythClient?: PythClient) {
+  constructor(pythClient?: PythClient, market?: OptionsMarket) {
     this.pythClient = pythClient || new PythClient();
+    this.market = market || null;
   }
 
   private getOrCreateEngine(writer: Address): OptionsEngine {
@@ -44,6 +47,13 @@ export class OptionsOrderBook {
       listedAt: Math.floor(Date.now() / 1000),
       isActive: true,
     });
+
+    // Track open interest when option is listed
+    if (this.market) {
+      const strike = Number(option.strikePrice) / 1e8;
+      const premium = Number(option.premium) / 1e8;
+      this.market.updateOpenInterest(strike, option.expiry, option.optionType, 1, premium);
+    }
 
     console.log(`[OrderBook] Option listed: ${option.id.slice(0, 10)}... by ${writer.slice(0, 10)}...`);
     return option;
@@ -70,6 +80,20 @@ export class OptionsOrderBook {
 
     const option = await engine.buyOption(optionId, buyer);
     listing.isActive = false;
+
+    // Record trade in market tracker
+    if (this.market) {
+      const premium = Number(option.premium) / 1e8;
+      const amount = Number(option.amount) / 1e18;
+      this.market.recordTrade({
+        optionId,
+        buyer,
+        seller: option.writer,
+        price: premium,
+        size: amount,
+        side: 'buy',
+      });
+    }
 
     console.log(`[OrderBook] Option ${optionId.slice(0, 10)}... bought by ${buyer.slice(0, 10)}...`);
     return option;

@@ -10,7 +10,10 @@ const router = Router();
  */
 router.get('/', async (_req: Request, res: Response) => {
   try {
+    console.log('   [Price] Fetching ETH/USD from Pyth Hermes...');
     const priceData = await state.pythClient.getEthUsdPrice();
+
+    console.log(`   [Price] ✓ ETH/USD: $${priceData.price.toFixed(2)} (±$${priceData.confidence.toFixed(2)})`);
 
     const response: ApiResponse<PriceResponse> = {
       success: true,
@@ -25,6 +28,7 @@ router.get('/', async (_req: Request, res: Response) => {
 
     res.json(response);
   } catch (error) {
+    console.log(`   [Price] ✗ Failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     const response: ApiResponse<null> = {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to fetch price',
