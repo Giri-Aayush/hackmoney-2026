@@ -23,10 +23,10 @@ export class DatabaseService {
 
     if (existing) return existing;
 
-    // Create new user with default balance
+    // Create new user with zero balance (must deposit first)
     const { data: newUser, error } = await supabase
       .from('users')
-      .insert({ wallet_address: normalized, balance: 10000 })
+      .insert({ wallet_address: normalized, balance: 0 })
       .select()
       .single();
 

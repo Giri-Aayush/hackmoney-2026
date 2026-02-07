@@ -1,8 +1,9 @@
 import { Address, Hex } from 'viem';
-import { Option, OptionType, CreateOptionParams } from './types.js';
+import { Option, OptionType, CreateOptionParams, OptionStatus } from './types.js';
 import { OptionsEngine } from './engine.js';
 import { PythClient } from '../pyth/index.js';
 import { OptionsMarket } from './market.js';
+import { supabase } from '../db/client.js';
 
 export interface ListedOption {
   option: Option;
@@ -23,10 +24,117 @@ export class OptionsOrderBook {
   private enginesByWriter: Map<Address, OptionsEngine> = new Map();
   private pythClient: PythClient;
   private market: OptionsMarket | null;
+  private loadedFromDb = false;
 
   constructor(pythClient?: PythClient, market?: OptionsMarket) {
     this.pythClient = pythClient || new PythClient();
     this.market = market || null;
+  }
+
+  /**
+   * Load all options from database (call on startup)
+   */
+  async loadFromDb(): Promise<number> {
+    if (this.loadedFromDb) return 0;
+
+    try {
+      const { data, error } = await supabase
+        .from('options')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('[OrderBook] Error loading options from DB:', error);
+        return 0;
+      }
+
+      if (data) {
+        for (const row of data) {
+          const option: Option = {
+            id: row.id as Hex,
+            underlying: row.underlying,
+            strikePrice: BigInt(Math.round(Number(row.strike_price) * 1e8)),
+            premium: BigInt(Math.round(Number(row.premium) * 1e8)),
+            expiry: Math.floor(new Date(row.expiry).getTime() / 1000),
+            optionType: row.option_type as OptionType,
+            amount: BigInt(Math.round(Number(row.amount) * 1e18)),
+            writer: row.writer_address as Address,
+            holder: row.holder_address as Address | null,
+            status: row.status as OptionStatus,
+            createdAt: Math.floor(new Date(row.created_at).getTime() / 1000),
+          };
+
+          const isActive = option.status === 'open' && option.holder === null;
+          this.listings.set(option.id, {
+            option,
+            listedAt: option.createdAt,
+            isActive,
+          });
+        }
+        console.log(`[OrderBook] Loaded ${data.length} options from database`);
+      }
+
+      this.loadedFromDb = true;
+      return data?.length || 0;
+    } catch (err) {
+      console.error('[OrderBook] Error loading options from DB:', err);
+      return 0;
+    }
+  }
+
+  /**
+   * Persist option to database
+   */
+  private async persistOption(option: Option): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('options')
+        .upsert({
+          id: option.id,
+          writer_address: option.writer.toLowerCase(),
+          holder_address: option.holder?.toLowerCase() || null,
+          underlying: option.underlying,
+          strike_price: Number(option.strikePrice) / 1e8,
+          premium: Number(option.premium) / 1e8,
+          amount: Number(option.amount) / 1e18,
+          option_type: option.optionType,
+          expiry: new Date(option.expiry * 1000).toISOString(),
+          status: option.status,
+          created_at: new Date(option.createdAt * 1000).toISOString(),
+          updated_at: new Date().toISOString(),
+        }, { onConflict: 'id' });
+
+      if (error) {
+        console.error('[OrderBook] Error persisting option:', error);
+      } else {
+        console.log(`[OrderBook] Persisted option ${option.id.slice(0, 10)}... to DB`);
+      }
+    } catch (err) {
+      console.error('[OrderBook] Error persisting option:', err);
+    }
+  }
+
+  /**
+   * Record trade in database
+   */
+  private async recordTrade(option: Option, buyer: Address): Promise<void> {
+    try {
+      const { error } = await supabase
+        .from('trades')
+        .insert({
+          option_id: option.id,
+          buyer_address: buyer.toLowerCase(),
+          seller_address: option.writer.toLowerCase(),
+          premium: Number(option.premium) / 1e8,
+          size: Number(option.amount) / 1e18,
+        });
+
+      if (error) {
+        console.error('[OrderBook] Error recording trade:', error);
+      }
+    } catch (err) {
+      console.error('[OrderBook] Error recording trade:', err);
+    }
   }
 
   private getOrCreateEngine(writer: Address): OptionsEngine {
@@ -55,6 +163,9 @@ export class OptionsOrderBook {
       this.market.updateOpenInterest(strike, option.expiry, option.optionType, 1, premium);
     }
 
+    // Persist to database asynchronously
+    this.persistOption(option).catch(console.error);
+
     console.log(`[OrderBook] Option listed: ${option.id.slice(0, 10)}... by ${writer.slice(0, 10)}...`);
     return option;
   }
@@ -80,6 +191,7 @@ export class OptionsOrderBook {
 
     const option = await engine.buyOption(optionId, buyer);
     listing.isActive = false;
+    listing.option = option; // Update the listing with the bought option
 
     // Record trade in market tracker
     if (this.market) {
@@ -94,6 +206,10 @@ export class OptionsOrderBook {
         side: 'buy',
       });
     }
+
+    // Persist option update and record trade in database
+    this.persistOption(option).catch(console.error);
+    this.recordTrade(option, buyer).catch(console.error);
 
     console.log(`[OrderBook] Option ${optionId.slice(0, 10)}... bought by ${buyer.slice(0, 10)}...`);
     return option;
@@ -186,7 +302,16 @@ export class OptionsOrderBook {
       throw new Error(`Engine not found for writer ${listing.option.writer}`);
     }
 
-    return engine.exerciseOption(optionId, holder);
+    const result = await engine.exerciseOption(optionId, holder);
+
+    // Update option status in listing
+    listing.option.status = 'exercised';
+    listing.isActive = false;
+
+    // Persist exercised option to database
+    this.persistOption(listing.option).catch(console.error);
+
+    return result;
   }
 
   cancelListing(optionId: Hex, writer: Address): void {

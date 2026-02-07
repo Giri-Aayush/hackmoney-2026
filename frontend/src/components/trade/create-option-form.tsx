@@ -133,13 +133,37 @@ export function CreateOptionForm() {
 
           {/* Expiry */}
           <div className="space-y-2">
-            <label className="text-sm font-medium">Expiry Date</label>
-            <Input
-              type="datetime-local"
-              value={expiry}
-              onChange={(e) => setExpiry(e.target.value)}
-              min={new Date().toISOString().slice(0, 16)}
-            />
+            <label className="text-sm font-medium">Expiry</label>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { label: '1 Hour', minutes: 60 },
+                { label: '4 Hours', minutes: 240 },
+                { label: '1 Day', minutes: 1440 },
+                { label: '1 Week', minutes: 10080 },
+                { label: '1 Month', minutes: 43200 },
+              ].map((opt) => {
+                const expiryTime = new Date(Date.now() + opt.minutes * 60 * 1000);
+                const value = expiryTime.toISOString().slice(0, 16);
+                const isSelected = expiry === value;
+                return (
+                  <Button
+                    key={opt.label}
+                    type="button"
+                    variant={isSelected ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => setExpiry(value)}
+                    className="text-xs"
+                  >
+                    {opt.label}
+                  </Button>
+                );
+              })}
+            </div>
+            {expiry && (
+              <p className="text-xs text-muted-foreground">
+                Expires: {new Date(expiry).toLocaleString()}
+              </p>
+            )}
           </div>
 
           {/* Premium */}

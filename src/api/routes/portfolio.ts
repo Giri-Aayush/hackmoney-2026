@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import { Address, Hex } from 'viem';
 import { state } from '../state.js';
 import { ApiResponse, PortfolioResponse, PositionResponse, OpenPositionRequest, ClosePositionRequest } from '../types.js';
+import { BalanceEntry } from '../../lib/balance/index.js';
 
 const router = Router();
 
@@ -345,6 +346,190 @@ router.post('/withdraw', async (req: Request, res: Response) => {
     const response: ApiResponse<null> = {
       success: false,
       error: error instanceof Error ? error.message : 'Failed to withdraw',
+      timestamp: Date.now(),
+    };
+    res.status(500).json(response);
+  }
+});
+
+// ============================================================================
+// TRADING BALANCE ENDPOINTS (Virtual Balance Tracker)
+// ============================================================================
+
+/**
+ * GET /api/portfolio/trading-balance
+ * Get user's trading balance (virtual balance for gasless trading)
+ */
+router.get('/trading-balance', async (req: Request, res: Response) => {
+  try {
+    const wallet = req.headers['x-wallet-address'] as Address;
+
+    if (!wallet) {
+      const response: ApiResponse<null> = {
+        success: false,
+        error: 'Missing x-wallet-address header',
+        timestamp: Date.now(),
+      };
+      return res.status(400).json(response);
+    }
+
+    // Use async version to load from DB if not cached
+    const balance = await state.balanceTracker.getBalanceAsync(wallet);
+
+    const response: ApiResponse<BalanceEntry> = {
+      success: true,
+      data: balance,
+      timestamp: Date.now(),
+    };
+
+    res.json(response);
+  } catch (error) {
+    const response: ApiResponse<null> = {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to get trading balance',
+      timestamp: Date.now(),
+    };
+    res.status(500).json(response);
+  }
+});
+
+/**
+ * POST /api/portfolio/trading-balance/sync
+ * Sync trading balance from on-chain deposit
+ * Called after a successful on-chain deposit to update virtual balance
+ */
+router.post('/trading-balance/sync', async (req: Request, res: Response) => {
+  try {
+    const wallet = req.headers['x-wallet-address'] as Address;
+    const { amount, txHash } = req.body;
+
+    if (!wallet) {
+      const response: ApiResponse<null> = {
+        success: false,
+        error: 'Missing x-wallet-address header',
+        timestamp: Date.now(),
+      };
+      return res.status(400).json(response);
+    }
+
+    if (!amount || amount <= 0) {
+      const response: ApiResponse<null> = {
+        success: false,
+        error: 'Invalid amount',
+        timestamp: Date.now(),
+      };
+      return res.status(400).json(response);
+    }
+
+    console.log(`[Portfolio] Syncing deposit for ${wallet.slice(0, 10)}...`);
+    console.log(`[Portfolio]   Amount: $${amount}`);
+    if (txHash) {
+      console.log(`[Portfolio]   TxHash: ${txHash.slice(0, 20)}...`);
+    }
+
+    // Add to trading balance
+    const balance = state.balanceTracker.deposit(wallet, amount);
+
+    const response: ApiResponse<BalanceEntry> = {
+      success: true,
+      data: balance,
+      timestamp: Date.now(),
+    };
+
+    res.json(response);
+  } catch (error) {
+    const response: ApiResponse<null> = {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to sync trading balance',
+      timestamp: Date.now(),
+    };
+    res.status(500).json(response);
+  }
+});
+
+/**
+ * POST /api/portfolio/trading-balance/reset
+ * Reset trading balance (for testing/debugging)
+ * This clears the virtual balance back to 0
+ */
+router.post('/trading-balance/reset', async (req: Request, res: Response) => {
+  try {
+    const wallet = req.headers['x-wallet-address'] as Address;
+
+    if (!wallet) {
+      const response: ApiResponse<null> = {
+        success: false,
+        error: 'Missing x-wallet-address header',
+        timestamp: Date.now(),
+      };
+      return res.status(400).json(response);
+    }
+
+    console.log(`[Portfolio] Resetting balance for ${wallet.slice(0, 10)}...`);
+
+    // Reset the balance
+    state.balanceTracker.resetBalance(wallet);
+
+    const response: ApiResponse<{ message: string }> = {
+      success: true,
+      data: { message: 'Balance reset successfully' },
+      timestamp: Date.now(),
+    };
+
+    res.json(response);
+  } catch (error) {
+    const response: ApiResponse<null> = {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to reset trading balance',
+      timestamp: Date.now(),
+    };
+    res.status(500).json(response);
+  }
+});
+
+/**
+ * POST /api/portfolio/trading-balance/set
+ * Set trading balance to a specific amount (for syncing with on-chain state)
+ */
+router.post('/trading-balance/set', async (req: Request, res: Response) => {
+  try {
+    const wallet = req.headers['x-wallet-address'] as Address;
+    const { amount } = req.body;
+
+    if (!wallet) {
+      const response: ApiResponse<null> = {
+        success: false,
+        error: 'Missing x-wallet-address header',
+        timestamp: Date.now(),
+      };
+      return res.status(400).json(response);
+    }
+
+    if (amount === undefined || amount < 0) {
+      const response: ApiResponse<null> = {
+        success: false,
+        error: 'Invalid amount',
+        timestamp: Date.now(),
+      };
+      return res.status(400).json(response);
+    }
+
+    console.log(`[Portfolio] Setting balance for ${wallet.slice(0, 10)}... to $${amount}`);
+
+    // Set the balance to exact amount
+    const balance = state.balanceTracker.setBalance(wallet, amount);
+
+    const response: ApiResponse<BalanceEntry> = {
+      success: true,
+      data: balance,
+      timestamp: Date.now(),
+    };
+
+    res.json(response);
+  } catch (error) {
+    const response: ApiResponse<null> = {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to set trading balance',
       timestamp: Date.now(),
     };
     res.status(500).json(response);

@@ -208,6 +208,56 @@ router.post('/protocol/refresh', async (_req: Request, res: Response) => {
 });
 
 /**
+ * GET /api/options/positions
+ * Get user's option positions (bought and written)
+ * Requires x-wallet-address header
+ */
+router.get('/positions', async (req: Request, res: Response) => {
+  try {
+    const address = req.headers['x-wallet-address'] as Address;
+
+    if (!address) {
+      const response: ApiResponse<null> = {
+        success: false,
+        error: 'Missing x-wallet-address header',
+        timestamp: Date.now(),
+      };
+      return res.status(400).json(response);
+    }
+
+    console.log(`   [Options] Fetching positions for ${address.slice(0, 10)}...`);
+
+    // Get options where user is the holder (bought)
+    const boughtOptions = state.orderBook.getOptionsByHolder(address);
+    // Get options where user is the writer (written)
+    const writtenOptions = state.orderBook.getOptionsByWriter(address);
+
+    const enrichedBought = await Promise.all(boughtOptions.map(enrichOption));
+    const enrichedWritten = await Promise.all(writtenOptions.map(enrichOption));
+
+    console.log(`   [Options] Found ${enrichedBought.length} bought, ${enrichedWritten.length} written`);
+
+    const response: ApiResponse<{ bought: OptionResponse[]; written: OptionResponse[] }> = {
+      success: true,
+      data: {
+        bought: enrichedBought,
+        written: enrichedWritten,
+      },
+      timestamp: Date.now(),
+    };
+
+    res.json(response);
+  } catch (error) {
+    const response: ApiResponse<null> = {
+      success: false,
+      error: error instanceof Error ? error.message : 'Failed to fetch positions',
+      timestamp: Date.now(),
+    };
+    res.status(500).json(response);
+  }
+});
+
+/**
  * GET /api/options/stats/summary
  * Get order book statistics
  */
@@ -339,13 +389,55 @@ router.post('/:id/buy', async (req: Request, res: Response) => {
       return res.status(400).json(response);
     }
 
+    // Get the option first to check premium
+    const optionToCheck = state.orderBook.getOptionById(id as Hex);
+    if (!optionToCheck) {
+      const response: ApiResponse<null> = {
+        success: false,
+        error: 'Option not found',
+        timestamp: Date.now(),
+      };
+      return res.status(404).json(response);
+    }
+
+    const premium = Number(optionToCheck.premium) / 1e8;
+    const writer = optionToCheck.writer;
+
     console.log(`   [Options] Buying option ${id.slice(0, 10)}...`);
     console.log(`   [Options]   Buyer: ${buyer.slice(0, 10)}...`);
+    console.log(`   [Options]   Premium: $${premium.toFixed(2)}`);
 
+    // Check buyer's balance
+    const buyerBalance = state.balanceTracker.getBalance(buyer);
+    if (buyerBalance.available < premium) {
+      const response: ApiResponse<null> = {
+        success: false,
+        error: `Insufficient balance. Need $${premium.toFixed(2)}, have $${buyerBalance.available.toFixed(2)}`,
+        timestamp: Date.now(),
+      };
+      return res.status(400).json(response);
+    }
+
+    // Deduct premium from buyer
+    const deductResult = state.balanceTracker.deductPremium(buyer, premium);
+    if (!deductResult.success) {
+      const response: ApiResponse<null> = {
+        success: false,
+        error: 'Failed to deduct premium',
+        timestamp: Date.now(),
+      };
+      return res.status(400).json(response);
+    }
+
+    // Credit premium to writer
+    state.balanceTracker.creditPremium(writer, premium);
+
+    // Execute the buy in the order book
     const option = await state.orderBook.buyOption(id as Hex, buyer);
     const enrichedOption = await enrichOption(option);
 
     console.log(`   [Options] ✓ Option purchased! Premium: $${enrichedOption.premium}`);
+    console.log(`   [Options]   Buyer new balance: $${deductResult.newBalance.toFixed(2)}`);
 
     const response: ApiResponse<OptionResponse> = {
       success: true,

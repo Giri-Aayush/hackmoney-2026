@@ -21,7 +21,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
-import { useOptionsChain, usePrice, useBuyOption } from '@/hooks/use-api';
+import { useOptionsChain, usePrice, useBuyOption, useTradingBalance } from '@/hooks/use-api';
 import { OptionsChainEntry } from '@/lib/api';
 import { cn } from '@/lib/utils';
 import { TrendingUp, TrendingDown, Zap, RefreshCw } from 'lucide-react';
@@ -42,7 +42,11 @@ export function OptionsChain() {
   const [selectedExpiry, setSelectedExpiry] = useState<string | undefined>(undefined);
   const { data: chain, isLoading, refetch, isRefetching } = useOptionsChain(selectedExpiry);
   const { data: price } = usePrice();
+  const { data: tradingBalance } = useTradingBalance();
   const buyOption = useBuyOption();
+
+  // Get available balance for trading
+  const availableBalance = tradingBalance?.available ?? 0;
 
   const [buyDialog, setBuyDialog] = useState<BuyDialogState>({
     isOpen: false,
@@ -426,6 +430,29 @@ export function OptionsChain() {
               </div>
             </div>
 
+            {/* Trading Balance Display */}
+            <div className={cn(
+              'p-3 rounded-lg border',
+              availableBalance >= buyDialog.ask
+                ? 'bg-emerald-500/5 border-emerald-500/20'
+                : 'bg-red-500/5 border-red-500/20'
+            )}>
+              <div className="flex justify-between items-center">
+                <span className="text-sm text-muted-foreground">Your Trading Balance</span>
+                <span className={cn(
+                  'font-semibold',
+                  availableBalance >= buyDialog.ask ? 'text-emerald-400' : 'text-red-400'
+                )}>
+                  ${availableBalance.toFixed(2)} USDC
+                </span>
+              </div>
+              {availableBalance < buyDialog.ask && (
+                <p className="text-xs text-red-400 mt-2">
+                  Insufficient balance. You need ${(buyDialog.ask - availableBalance).toFixed(2)} more.
+                </p>
+              )}
+            </div>
+
             <div className="flex items-center gap-2 text-xs text-amber-500">
               <Zap className="h-3 w-3" />
               <span>This trade is gasless via Yellow Network state channel</span>
@@ -442,14 +469,19 @@ export function OptionsChain() {
             </Button>
             <Button
               onClick={handleConfirmBuy}
-              disabled={buyOption.isPending}
+              disabled={buyOption.isPending || availableBalance < buyDialog.ask}
               className={cn(
                 buyDialog.type === 'call'
                   ? 'bg-emerald-600 hover:bg-emerald-700'
-                  : 'bg-red-600 hover:bg-red-700'
+                  : 'bg-red-600 hover:bg-red-700',
+                availableBalance < buyDialog.ask && 'opacity-50 cursor-not-allowed'
               )}
             >
-              {buyOption.isPending ? 'Processing...' : `Buy ${buyDialog.type.toUpperCase()}`}
+              {buyOption.isPending
+                ? 'Processing...'
+                : availableBalance < buyDialog.ask
+                  ? 'Insufficient Balance'
+                  : `Buy ${buyDialog.type.toUpperCase()}`}
             </Button>
           </DialogFooter>
         </DialogContent>

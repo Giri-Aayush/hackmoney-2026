@@ -9,6 +9,7 @@ import { PythClient } from '../lib/pyth/index.js';
 import { OptionsOrderBook, OptionsMarket, ProtocolOptionsGenerator } from '../lib/options/index.js';
 import { PositionManager } from '../lib/portfolio/index.js';
 import { StrategyBuilder } from '../lib/strategies/index.js';
+import { BalanceTracker } from '../lib/balance/index.js';
 import { Address } from 'viem';
 
 class ApiState {
@@ -20,10 +21,12 @@ class ApiState {
   public positionManagers: Map<Address, PositionManager> = new Map();
   public strategyBuilder: StrategyBuilder;
   public protocolOptions: ProtocolOptionsGenerator;
+  public balanceTracker: BalanceTracker;
 
   private cachedPrice: { price: number; confidence: number; timestamp: number } | null = null;
   private priceCacheTTL = 5000; // 5 seconds
   private protocolOptionsInitialized = false;
+  private dataLoadedFromDb = false;
 
   private constructor() {
     this.pythClient = new PythClient();
@@ -31,6 +34,38 @@ class ApiState {
     this.orderBook = new OptionsOrderBook(this.pythClient, this.market);
     this.strategyBuilder = new StrategyBuilder();
     this.protocolOptions = new ProtocolOptionsGenerator(this.orderBook, this.pythClient);
+    this.balanceTracker = new BalanceTracker();
+  }
+
+  /**
+   * Load data from Supabase on startup
+   */
+  async loadDataFromDb(): Promise<void> {
+    if (this.dataLoadedFromDb) {
+      console.log('[State] Data already loaded from database');
+      return;
+    }
+
+    console.log('[State] Loading data from Supabase...');
+
+    try {
+      // Load balances
+      const balanceCount = await this.balanceTracker.loadAllFromDb();
+      console.log(`[State] ✓ Loaded ${balanceCount} user balances`);
+
+      // Load options
+      const optionCount = await this.orderBook.loadFromDb();
+      console.log(`[State] ✓ Loaded ${optionCount} options`);
+
+      // Load market data (trades, open interest)
+      const tradeCount = await this.market.loadFromDb();
+      console.log(`[State] ✓ Loaded ${tradeCount} recent trades`);
+
+      this.dataLoadedFromDb = true;
+      console.log('[State] ✓ All data loaded from database');
+    } catch (error) {
+      console.error('[State] Error loading data from database:', error);
+    }
   }
 
   /**

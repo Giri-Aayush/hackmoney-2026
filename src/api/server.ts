@@ -237,6 +237,15 @@ export class OptiChannelServer {
    * Start the server
    */
   async start(): Promise<void> {
+    // Load persisted data from Supabase
+    try {
+      await state.loadDataFromDb();
+      console.log('[Server] ✓ Data loaded from database');
+    } catch (error) {
+      console.error('[Server] Warning: Failed to load data from database:', error);
+      console.log('[Server] Continuing with empty state...');
+    }
+
     // Initialize protocol options (Binance-style standardized contracts)
     try {
       const optionsCount = await state.initializeProtocolOptions();

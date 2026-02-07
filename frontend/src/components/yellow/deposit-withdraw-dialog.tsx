@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAccount, useBalance, useWriteContract, useWaitForTransactionReceipt } from 'wagmi';
 import { parseUnits, formatUnits, type Address } from 'viem';
 import { toast } from 'sonner';
+import { useSyncDeposit } from '@/hooks/use-api';
 import {
   Dialog,
   DialogContent,
@@ -76,6 +77,7 @@ export function DepositWithdrawDialog({
   const [tab, setTab] = useState<'deposit' | 'withdraw'>(defaultTab);
   const [amount, setAmount] = useState('');
   const [step, setStep] = useState<'input' | 'approving' | 'depositing' | 'withdrawing' | 'success'>('input');
+  const syncDeposit = useSyncDeposit();
 
   // Get USDC balance
   const { data: usdcBalance } = useBalance({
@@ -130,28 +132,42 @@ export function DepositWithdrawDialog({
   };
 
   // Effect to handle approve success -> deposit
-  if (approveSuccess && step === 'approving') {
-    setStep('depositing');
-    const amountInUnits = parseUnits(amount, 6);
-    deposit({
-      address: OPTICHANNEL_CONTRACT,
-      abi: OPTICHANNEL_ABI,
-      functionName: 'deposit',
-      args: [amountInUnits],
-    });
-  }
+  useEffect(() => {
+    if (approveSuccess && step === 'approving') {
+      setStep('depositing');
+      const amountInUnits = parseUnits(amount, 6);
+      deposit({
+        address: OPTICHANNEL_CONTRACT,
+        abi: OPTICHANNEL_ABI,
+        functionName: 'deposit',
+        args: [amountInUnits],
+      });
+    }
+  }, [approveSuccess, step, amount, deposit]);
 
   // Effect to handle deposit success
-  if (depositSuccess && step === 'depositing') {
-    setStep('success');
-    toast.success('Deposit successful!');
-    refreshBalances();
-    setTimeout(() => {
-      setStep('input');
-      setAmount('');
-      onOpenChange(false);
-    }, 2000);
-  }
+  useEffect(() => {
+    if (depositSuccess && step === 'depositing') {
+      setStep('success');
+      toast.success('Deposit successful!');
+      refreshBalances();
+
+      // Sync trading balance with deposited amount
+      const depositAmount = parseFloat(amount);
+      if (depositAmount > 0 && depositHash) {
+        syncDeposit.mutate({
+          amount: depositAmount,
+          txHash: depositHash,
+        });
+      }
+
+      setTimeout(() => {
+        setStep('input');
+        setAmount('');
+        onOpenChange(false);
+      }, 2000);
+    }
+  }, [depositSuccess, step, amount, depositHash, refreshBalances, syncDeposit, onOpenChange]);
 
   // Handle withdraw
   const handleWithdraw = async () => {
@@ -175,16 +191,18 @@ export function DepositWithdrawDialog({
   };
 
   // Effect to handle withdraw success
-  if (withdrawSuccess && step === 'withdrawing') {
-    setStep('success');
-    toast.success('Withdrawal successful!');
-    refreshBalances();
-    setTimeout(() => {
-      setStep('input');
-      setAmount('');
-      onOpenChange(false);
-    }, 2000);
-  }
+  useEffect(() => {
+    if (withdrawSuccess && step === 'withdrawing') {
+      setStep('success');
+      toast.success('Withdrawal successful!');
+      refreshBalances();
+      setTimeout(() => {
+        setStep('input');
+        setAmount('');
+        onOpenChange(false);
+      }, 2000);
+    }
+  }, [withdrawSuccess, step, refreshBalances, onOpenChange]);
 
   const isLoading = isApproving || isDepositing || isWithdrawing;
   const maxDeposit = usdcBalance ? parseFloat(formatUnits(usdcBalance.value, 6)) : 0;

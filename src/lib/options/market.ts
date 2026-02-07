@@ -12,6 +12,7 @@
 
 import { Address, Hex, keccak256, toHex } from 'viem';
 import { Option, OptionType } from './types.js';
+import { supabase } from '../db/client.js';
 
 // Order types like Binance
 export type OrderType = 'market' | 'limit' | 'stop_limit' | 'take_profit';
@@ -112,6 +113,78 @@ export class OptionsMarket {
   // Track 24h stats
   private volumeWindow: Trade[] = [];
   private readonly VOLUME_WINDOW_MS = 24 * 60 * 60 * 1000; // 24 hours
+  private loadedFromDb = false;
+
+  /**
+   * Load market data from database (trades, recalculate stats)
+   */
+  async loadFromDb(): Promise<number> {
+    if (this.loadedFromDb) return 0;
+
+    try {
+      // Load trades from database
+      const cutoff = new Date(Date.now() - this.VOLUME_WINDOW_MS).toISOString();
+      const { data: trades, error } = await supabase
+        .from('trades')
+        .select('*')
+        .gte('created_at', cutoff)
+        .order('created_at', { ascending: true });
+
+      if (error) {
+        console.error('[Market] Error loading trades from DB:', error);
+        return 0;
+      }
+
+      if (trades) {
+        for (const row of trades) {
+          const trade: Trade = {
+            id: keccak256(toHex(`trade:${row.id}`)),
+            optionId: row.option_id as Hex,
+            buyer: row.buyer_address as Address,
+            seller: row.seller_address as Address,
+            price: Number(row.premium) || 0,
+            size: Number(row.size) || 0,
+            side: 'buy',
+            timestamp: new Date(row.created_at).getTime(),
+          };
+
+          this.trades.push(trade);
+          this.volumeWindow.push(trade);
+          this.lastPrices.set(trade.optionId, trade.price);
+        }
+        console.log(`[Market] Loaded ${trades.length} trades from database`);
+      }
+
+      // Load options to calculate open interest
+      const { data: options, error: optError } = await supabase
+        .from('options')
+        .select('strike_price, expiry, option_type, premium, status, holder_address')
+        .eq('status', 'open');
+
+      if (optError) {
+        console.error('[Market] Error loading options for OI:', optError);
+      } else if (options) {
+        for (const opt of options) {
+          const strike = Number(opt.strike_price);
+          const expiry = Math.floor(new Date(opt.expiry).getTime() / 1000);
+          const premium = Number(opt.premium);
+          const optionType = opt.option_type as OptionType;
+
+          // Count as open interest if it has a holder (was bought)
+          if (opt.holder_address) {
+            this.updateOpenInterest(strike, expiry, optionType, 1, premium);
+          }
+        }
+        console.log(`[Market] Calculated open interest from ${options.length} options`);
+      }
+
+      this.loadedFromDb = true;
+      return trades?.length || 0;
+    } catch (err) {
+      console.error('[Market] Error loading from DB:', err);
+      return 0;
+    }
+  }
 
   /**
    * Place a limit order

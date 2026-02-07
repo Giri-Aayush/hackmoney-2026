@@ -11,6 +11,9 @@ export interface Option {
   buyer?: string;
   status: 'open' | 'filled' | 'exercised' | 'expired' | 'cancelled';
   underlyingAsset: string;
+  theoreticalPrice?: number;
+  intrinsicValue?: number;
+  timeValue?: number;
   greeks?: {
     delta: number;
     gamma: number;
@@ -56,16 +59,46 @@ export interface Trade {
 }
 
 export interface StrategyTemplate {
+  type: string;
   name: string;
   description: string;
-  legs: Array<{
+  requiredParams: string[];
+  // Optional fields that may not be present in simple templates
+  legs?: Array<{
     type: 'call' | 'put';
     position: 'long' | 'short';
     strikeOffset: number;
   }>;
-  maxProfit: string;
-  maxLoss: string;
-  breakeven: string;
+  maxProfit?: string;
+  maxLoss?: string;
+  breakeven?: string;
+}
+
+export interface BuiltStrategy {
+  id: string;
+  name: string;
+  type: string;
+  underlying: string;
+  legs: Array<{
+    optionType: 'call' | 'put';
+    strike: number;
+    side: 'buy' | 'sell';
+    quantity: number;
+    premium: number;
+  }>;
+  expiry: number;
+  netDebit: number;
+  maxProfit: number | null;
+  maxLoss: number | null;
+  breakevens: number[];
+}
+
+export interface TradingBalance {
+  available: number;
+  locked: number;
+  totalDeposited: number;
+  totalWithdrawn: number;
+  lastUpdated: number;
 }
 
 // Binance-style options chain types
@@ -127,8 +160,8 @@ class ApiClient {
     });
 
     if (!response.ok) {
-      const error = await response.json().catch(() => ({ message: response.statusText }));
-      throw new Error(error.message || 'API request failed');
+      const errorData = await response.json().catch(() => ({ error: response.statusText }));
+      throw new Error(errorData.error || errorData.message || 'API request failed');
     }
 
     return response.json();
@@ -136,13 +169,108 @@ class ApiClient {
 
   // Price endpoints
   async getPrice(): Promise<PriceData> {
-    return this.fetch<PriceData>('/api/price');
+    const response = await this.fetch<{ success: boolean; data: { symbol: string; price: number; confidence: number; publishTime: string } }>('/api/price');
+    return {
+      asset: response.data.symbol,
+      price: response.data.price,
+      confidence: response.data.confidence,
+      publishTime: new Date(response.data.publishTime).getTime(),
+      source: 'Pyth',
+    };
   }
 
   // Options endpoints
   async getOptions(): Promise<Option[]> {
-    const response = await this.fetch<{ options: Option[] }>('/api/options');
-    return response.options;
+    // Backend returns { success, data: OptionResponse[] } with different field names
+    interface BackendOption {
+      id: string;
+      optionType: 'call' | 'put';
+      strikePrice: number;
+      expiry: number;
+      premium: number;
+      amount: number;
+      writer: string;
+      holder?: string;
+      status: string;
+      underlying: string;
+      greeks?: {
+        delta: number;
+        gamma: number;
+        theta: number;
+        vega: number;
+        rho: number;
+      };
+    }
+
+    const response = await this.fetch<{ success: boolean; data: BackendOption[] }>('/api/options');
+
+    // Transform backend format to frontend format
+    return (response.data || []).map((o) => ({
+      id: o.id,
+      type: o.optionType,
+      strike: o.strikePrice,
+      expiry: o.expiry,
+      premium: o.premium,
+      amount: o.amount,
+      writer: o.writer,
+      buyer: o.holder,
+      status: o.status as Option['status'],
+      underlyingAsset: o.underlying || 'ETH',
+      greeks: o.greeks,
+    }));
+  }
+
+  async getPositions(): Promise<{ bought: Option[]; written: Option[] }> {
+    // Backend returns options with different field names
+    interface BackendOption {
+      id: string;
+      optionType: 'call' | 'put';
+      strikePrice: number;
+      expiry: number;
+      premium: number;
+      amount: number;
+      writer: string;
+      holder?: string;
+      status: string;
+      underlying: string;
+      theoreticalPrice?: number;
+      intrinsicValue?: number;
+      timeValue?: number;
+      greeks?: {
+        delta: number;
+        gamma: number;
+        theta: number;
+        vega: number;
+        rho: number;
+      };
+    }
+
+    const response = await this.fetch<{
+      success: boolean;
+      data: { bought: BackendOption[]; written: BackendOption[] };
+    }>('/api/options/positions');
+
+    const transform = (o: BackendOption): Option => ({
+      id: o.id,
+      type: o.optionType,
+      strike: o.strikePrice,
+      expiry: o.expiry,
+      premium: o.premium,
+      amount: o.amount,
+      writer: o.writer,
+      buyer: o.holder,
+      status: o.status as Option['status'],
+      underlyingAsset: o.underlying || 'ETH',
+      theoreticalPrice: o.theoreticalPrice,
+      intrinsicValue: o.intrinsicValue,
+      timeValue: o.timeValue,
+      greeks: o.greeks,
+    });
+
+    return {
+      bought: (response.data?.bought || []).map(transform),
+      written: (response.data?.written || []).map(transform),
+    };
   }
 
   async createOption(option: {
@@ -152,11 +280,24 @@ class ApiClient {
     premium: number;
     amount: number;
   }): Promise<Option> {
-    const response = await this.fetch<{ option: Option }>('/api/options', {
+    // Convert expiry timestamp to minutes from now
+    const expiryMinutes = Math.max(1, Math.round((option.expiry - Date.now()) / (1000 * 60)));
+
+    // Transform to backend format
+    const payload = {
+      underlying: 'ETH',
+      strikePrice: option.strike,
+      premium: option.premium,
+      expiryMinutes,
+      optionType: option.type,
+      amount: option.amount,
+    };
+
+    const response = await this.fetch<{ success: boolean; data: Option }>('/api/options', {
       method: 'POST',
-      body: JSON.stringify(option),
+      body: JSON.stringify(payload),
     });
-    return response.option;
+    return response.data;
   }
 
   async buyOption(optionId: string): Promise<{ success: boolean; trade: Trade }> {
@@ -182,11 +323,26 @@ class ApiClient {
 
   // Market endpoints
   async getVolume(): Promise<VolumeStats> {
-    return this.fetch<VolumeStats>('/api/market/volume');
+    const response = await this.fetch<{ success: boolean; data: { volume24h: number; trades24h: number; volumeUsd24h: number } }>('/api/market/volume');
+    return {
+      volume24h: response.data?.volumeUsd24h || 0,
+      tradeCount24h: response.data?.trades24h || 0,
+      uniqueTraders24h: 0, // Not tracked by backend
+    };
   }
 
   async getOpenInterest(): Promise<OpenInterest> {
-    return this.fetch<OpenInterest>('/api/market/open-interest');
+    interface OIData { strike: number; expiry: number; callOI: number; putOI: number }
+    const response = await this.fetch<{ success: boolean; data: { byStrike: OIData[]; totals: { totalOI: number } } }>('/api/market/open-interest');
+    return {
+      totalOpenInterest: response.data?.totals?.totalOI || 0,
+      byStrike: (response.data?.byStrike || []).map(oi => ({
+        strike: oi.strike,
+        calls: oi.callOI,
+        puts: oi.putOI,
+        total: oi.callOI + oi.putOI,
+      })),
+    };
   }
 
   async getMarketDepth(optionId: string): Promise<{
@@ -197,18 +353,43 @@ class ApiClient {
   }
 
   async getRecentTrades(limit?: number): Promise<Trade[]> {
-    const response = await this.fetch<{ trades: Trade[] }>(
+    const response = await this.fetch<{ success: boolean; data: { trades: Trade[]; count: number } }>(
       `/api/market/trades${limit ? `?limit=${limit}` : ''}`
     );
-    return response.trades;
+    return response.data?.trades || [];
   }
 
   // Strategy endpoints
   async getStrategyTemplates(): Promise<StrategyTemplate[]> {
-    const response = await this.fetch<{ templates: StrategyTemplate[] }>(
+    const response = await this.fetch<{ success: boolean; data: StrategyTemplate[] }>(
       '/api/strategies/templates'
     );
-    return response.templates;
+    return response.data || [];
+  }
+
+  async buildStrategy(params: {
+    type: string;
+    underlying: string;
+    expiryDays: number;
+    lowerStrike?: number;
+    upperStrike?: number;
+    middleStrike?: number;
+    strike?: number;
+    putStrike?: number;
+    callStrike?: number;
+    putBuyStrike?: number;
+    putSellStrike?: number;
+    callSellStrike?: number;
+    callBuyStrike?: number;
+  }): Promise<BuiltStrategy> {
+    const response = await this.fetch<{ success: boolean; data: BuiltStrategy }>(
+      '/api/strategies/build',
+      {
+        method: 'POST',
+        body: JSON.stringify(params),
+      }
+    );
+    return response.data;
   }
 
   // Protocol options chain (Binance-style)
@@ -223,6 +404,42 @@ class ApiClient {
     const response = await this.fetch<{ success: boolean; data: { newOptions: number } }>(
       '/api/options/protocol/refresh',
       { method: 'POST' }
+    );
+    return response.data;
+  }
+
+  // Trading balance endpoints
+  async getTradingBalance(): Promise<TradingBalance> {
+    const response = await this.fetch<{ success: boolean; data: TradingBalance }>(
+      '/api/portfolio/trading-balance'
+    );
+    return response.data;
+  }
+
+  async syncDeposit(amount: number, txHash?: string): Promise<TradingBalance> {
+    const response = await this.fetch<{ success: boolean; data: TradingBalance }>(
+      '/api/portfolio/trading-balance/sync',
+      {
+        method: 'POST',
+        body: JSON.stringify({ amount, txHash }),
+      }
+    );
+    return response.data;
+  }
+
+  async resetTradingBalance(): Promise<void> {
+    await this.fetch<{ success: boolean }>('/api/portfolio/trading-balance/reset', {
+      method: 'POST',
+    });
+  }
+
+  async setTradingBalance(amount: number): Promise<TradingBalance> {
+    const response = await this.fetch<{ success: boolean; data: TradingBalance }>(
+      '/api/portfolio/trading-balance/set',
+      {
+        method: 'POST',
+        body: JSON.stringify({ amount }),
+      }
     );
     return response.data;
   }

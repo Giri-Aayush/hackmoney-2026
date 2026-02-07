@@ -3,7 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAccount } from 'wagmi';
 import { useEffect } from 'react';
-import { api, Option } from '@/lib/api';
+import { api, Option, TradingBalance } from '@/lib/api';
 
 // Set wallet address when account changes
 export function useApiWallet() {
@@ -19,7 +19,7 @@ export function usePrice() {
   return useQuery({
     queryKey: ['price'],
     queryFn: () => api.getPrice(),
-    refetchInterval: 10000, // Refetch every 10 seconds
+    refetchInterval: 1000, // Refetch every second for real-time trading feel
   });
 }
 
@@ -42,6 +42,7 @@ export function useOptionStats() {
 
 export function useCreateOption() {
   const queryClient = useQueryClient();
+  const { address } = useAccount();
 
   return useMutation({
     mutationFn: (option: {
@@ -50,7 +51,13 @@ export function useCreateOption() {
       expiry: number;
       premium: number;
       amount: number;
-    }) => api.createOption(option),
+    }) => {
+      // Ensure wallet address is set before making the request
+      if (address) {
+        api.setWalletAddress(address);
+      }
+      return api.createOption(option);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['options'] });
       queryClient.invalidateQueries({ queryKey: ['option-stats'] });
@@ -60,24 +67,40 @@ export function useCreateOption() {
 
 export function useBuyOption() {
   const queryClient = useQueryClient();
+  const { address } = useAccount();
 
   return useMutation({
-    mutationFn: (optionId: string) => api.buyOption(optionId),
+    mutationFn: (optionId: string) => {
+      if (address) {
+        api.setWalletAddress(address);
+      }
+      return api.buyOption(optionId);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['options'] });
+      queryClient.invalidateQueries({ queryKey: ['options-chain'] });
       queryClient.invalidateQueries({ queryKey: ['trades'] });
       queryClient.invalidateQueries({ queryKey: ['volume'] });
+      queryClient.invalidateQueries({ queryKey: ['trading-balance'] });
+      queryClient.invalidateQueries({ queryKey: ['positions'] });
     },
   });
 }
 
 export function useExerciseOption() {
   const queryClient = useQueryClient();
+  const { address } = useAccount();
 
   return useMutation({
-    mutationFn: (optionId: string) => api.exerciseOption(optionId),
+    mutationFn: (optionId: string) => {
+      if (address) {
+        api.setWalletAddress(address);
+      }
+      return api.exerciseOption(optionId);
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['options'] });
+      queryClient.invalidateQueries({ queryKey: ['options-chain'] });
       queryClient.invalidateQueries({ queryKey: ['open-interest'] });
     },
   });
@@ -125,6 +148,29 @@ export function useStrategyTemplates() {
   });
 }
 
+export function useBuildStrategy() {
+  return useMutation({
+    mutationFn: (params: Parameters<typeof api.buildStrategy>[0]) => api.buildStrategy(params),
+  });
+}
+
+// User positions (bought and written options)
+export function usePositions() {
+  const { address } = useAccount();
+
+  return useQuery({
+    queryKey: ['positions', address],
+    queryFn: () => {
+      if (address) {
+        api.setWalletAddress(address);
+      }
+      return api.getPositions();
+    },
+    enabled: !!address,
+    refetchInterval: 1000, // Refetch every second for real-time pricing
+  });
+}
+
 // Protocol options chain (Binance-style)
 export function useOptionsChain(expiry?: string) {
   return useQuery({
@@ -142,6 +188,40 @@ export function useRefreshOptionsChain() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['options-chain'] });
       queryClient.invalidateQueries({ queryKey: ['options'] });
+    },
+  });
+}
+
+// Trading balance hooks
+export function useTradingBalance() {
+  const { address } = useAccount();
+
+  return useQuery({
+    queryKey: ['trading-balance', address],
+    queryFn: () => {
+      if (address) {
+        api.setWalletAddress(address);
+      }
+      return api.getTradingBalance();
+    },
+    enabled: !!address,
+    refetchInterval: 1000, // Refresh every second for real-time balance updates
+  });
+}
+
+export function useSyncDeposit() {
+  const queryClient = useQueryClient();
+  const { address } = useAccount();
+
+  return useMutation({
+    mutationFn: ({ amount, txHash }: { amount: number; txHash?: string }) => {
+      if (address) {
+        api.setWalletAddress(address);
+      }
+      return api.syncDeposit(amount, txHash);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['trading-balance'] });
     },
   });
 }
