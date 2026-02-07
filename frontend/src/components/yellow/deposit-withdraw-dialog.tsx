@@ -20,7 +20,7 @@ import { Loader2, ArrowDownRight, ArrowUpRight, ExternalLink, Zap } from 'lucide
 import { useYellow } from '@/lib/yellow';
 
 // Contract addresses on Sepolia
-const OPTICHANNEL_CONTRACT = '0x7779c5E338e52Be395A2A5386f8CFBf6629f67CB' as Address;
+const OPTIX_CONTRACT = '0x7779c5E338e52Be395A2A5386f8CFBf6629f67CB' as Address;
 const USDC_ADDRESS = '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238' as Address;
 
 // USDC ABI for approve
@@ -46,7 +46,7 @@ const USDC_ABI = [
 ] as const;
 
 // Optix ABI for deposit/withdraw
-const OPTICHANNEL_ABI = [
+const OPTIX_ABI = [
   {
     name: 'deposit',
     type: 'function',
@@ -122,7 +122,7 @@ export function DepositWithdrawDialog({
         address: USDC_ADDRESS,
         abi: USDC_ABI,
         functionName: 'approve',
-        args: [OPTICHANNEL_CONTRACT, amountInUnits],
+        args: [OPTIX_CONTRACT, amountInUnits],
       });
     } catch (error) {
       console.error('Deposit failed:', error);
@@ -137,8 +137,8 @@ export function DepositWithdrawDialog({
       setStep('depositing');
       const amountInUnits = parseUnits(amount, 6);
       deposit({
-        address: OPTICHANNEL_CONTRACT,
-        abi: OPTICHANNEL_ABI,
+        address: OPTIX_CONTRACT,
+        abi: OPTIX_ABI,
         functionName: 'deposit',
         args: [amountInUnits],
       });
@@ -178,8 +178,8 @@ export function DepositWithdrawDialog({
 
       setStep('withdrawing');
       withdraw({
-        address: OPTICHANNEL_CONTRACT,
-        abi: OPTICHANNEL_ABI,
+        address: OPTIX_CONTRACT,
+        abi: OPTIX_ABI,
         functionName: 'withdraw',
         args: [amountInUnits],
       });

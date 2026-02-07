@@ -11,7 +11,7 @@ import {
   SessionManager,
   AppSession,
   createUsdcAllocation,
-  OPTICHANNEL_PROTOCOL,
+  OPTIX_PROTOCOL,
 } from './session.js';
 import { RPCAppSessionAllocation } from '@erc7824/nitrolite';
 import { Option, OptionType } from '../options/types.js';

@@ -20,8 +20,8 @@ import {
   ContractAddresses,
 } from './types.js';
 
-// OptiChannel Settlement Contract ABI (minimal interface)
-const OPTICHANNEL_ABI = parseAbi([
+// Optix Settlement Contract ABI (minimal interface)
+const OPTIX_ABI = parseAbi([
   // Deposits
   'function deposit(uint256 amount) external',
   'function depositFor(address user, uint256 amount) external',
@@ -94,8 +94,8 @@ export class SettlementService {
    */
   async getOnChainBalance(user: Address): Promise<bigint> {
     const balance = await this.publicClient.readContract({
-      address: this.contracts.optiChannel,
-      abi: OPTICHANNEL_ABI,
+      address: this.contracts.optix,
+      abi: OPTIX_ABI,
       functionName: 'balanceOf',
       args: [user],
     });
@@ -120,8 +120,8 @@ export class SettlementService {
    */
   async getNonce(user: Address): Promise<bigint> {
     const nonce = await this.publicClient.readContract({
-      address: this.contracts.optiChannel,
-      abi: OPTICHANNEL_ABI,
+      address: this.contracts.optix,
+      abi: OPTIX_ABI,
       functionName: 'nonces',
       args: [user],
     });
@@ -133,8 +133,8 @@ export class SettlementService {
    */
   async isOptionSettled(optionId: Hex): Promise<boolean> {
     const settled = await this.publicClient.readContract({
-      address: this.contracts.optiChannel,
-      abi: OPTICHANNEL_ABI,
+      address: this.contracts.optix,
+      abi: OPTIX_ABI,
       functionName: 'isSettled',
       args: [optionId],
     });
@@ -153,7 +153,7 @@ export class SettlementService {
       address: this.contracts.usdc,
       abi: ERC20_ABI,
       functionName: 'approve',
-      args: [this.contracts.optiChannel, amount],
+      args: [this.contracts.optix, amount],
     });
 
     // Wait for confirmation
@@ -175,7 +175,7 @@ export class SettlementService {
         address: this.contracts.usdc,
         abi: ERC20_ABI,
         functionName: 'allowance',
-        args: [request.user, this.contracts.optiChannel],
+        args: [request.user, this.contracts.optix],
       }) as bigint;
 
       // Approve if needed
@@ -187,8 +187,8 @@ export class SettlementService {
       const hash = await this.walletClient.writeContract({
         account: this.account!,
         chain: sepolia,
-        address: this.contracts.optiChannel,
-        abi: OPTICHANNEL_ABI,
+        address: this.contracts.optix,
+        abi: OPTIX_ABI,
         functionName: 'deposit',
         args: [request.amount],
       });
@@ -216,8 +216,8 @@ export class SettlementService {
       const hash = await this.walletClient.writeContract({
         account: this.account!,
         chain: sepolia,
-        address: this.contracts.optiChannel,
-        abi: OPTICHANNEL_ABI,
+        address: this.contracts.optix,
+        abi: OPTIX_ABI,
         functionName: 'withdraw',
         args: [request.amount, request.nonce, request.signature],
       });
@@ -252,8 +252,8 @@ export class SettlementService {
       const hash = await this.walletClient.writeContract({
         account: this.account!,
         chain: sepolia,
-        address: this.contracts.optiChannel,
-        abi: OPTICHANNEL_ABI,
+        address: this.contracts.optix,
+        abi: OPTIX_ABI,
         functionName: 'settleOption',
         args: [
           request.optionId,
@@ -283,8 +283,8 @@ export class SettlementService {
    */
   watchDeposits(callback: (event: { user: Address; amount: bigint }) => void): () => void {
     const unwatch = this.publicClient.watchContractEvent({
-      address: this.contracts.optiChannel,
-      abi: OPTICHANNEL_ABI,
+      address: this.contracts.optix,
+      abi: OPTIX_ABI,
       eventName: 'Deposit',
       onLogs: (logs) => {
         for (const log of logs) {
@@ -304,8 +304,8 @@ export class SettlementService {
     callback: (event: { optionId: Hex; holder: Address; writer: Address; payout: bigint }) => void
   ): () => void {
     const unwatch = this.publicClient.watchContractEvent({
-      address: this.contracts.optiChannel,
-      abi: OPTICHANNEL_ABI,
+      address: this.contracts.optix,
+      abi: OPTIX_ABI,
       eventName: 'OptionSettled',
       onLogs: (logs) => {
         for (const log of logs) {
@@ -321,7 +321,7 @@ export class SettlementService {
 
 // Default contract addresses - Ethereum Sepolia
 export const DEFAULT_CONTRACTS: ContractAddresses = {
-  optiChannel: '0x7779c5E338e52Be395A2A5386f8CFBf6629f67CB' as Address, // OptiChannelSettlement on Sepolia
+  optix: '0x7779c5E338e52Be395A2A5386f8CFBf6629f67CB' as Address, // Optix Settlement on Sepolia
   usdc: '0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238' as Address, // Circle USDC on Sepolia
   pyth: '0xDd24F84d36BF92C65F92307595335bdFab5Bbd21' as Address, // Pyth on Sepolia
 };

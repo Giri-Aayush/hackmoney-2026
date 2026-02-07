@@ -19,7 +19,7 @@ import { db } from '../db/service.js';
 import { DEFAULT_CONTRACTS } from '../settlement/service.js';
 
 // Events ABI
-const OPTICHANNEL_EVENTS_ABI = parseAbi([
+const OPTIX_EVENTS_ABI = parseAbi([
   'event Deposit(address indexed user, uint256 amount)',
   'event Withdrawal(address indexed user, uint256 amount)',
   'event OptionSettled(bytes32 indexed optionId, address holder, address writer, uint256 payout)',
@@ -81,7 +81,7 @@ export class EventIndexerService {
   private settlementUnwatch: (() => void) | null = null;
 
   constructor(indexerConfig: IndexerConfig = {}) {
-    this.contractAddress = indexerConfig.contractAddress || DEFAULT_CONTRACTS.optiChannel;
+    this.contractAddress = indexerConfig.contractAddress || DEFAULT_CONTRACTS.optix;
     this.pollInterval = indexerConfig.pollInterval || 15000; // 15 seconds default
 
     this.client = createPublicClient({
@@ -177,7 +177,7 @@ export class EventIndexerService {
     // Watch Deposit events
     this.depositUnwatch = this.client.watchContractEvent({
       address: this.contractAddress,
-      abi: OPTICHANNEL_EVENTS_ABI,
+      abi: OPTIX_EVENTS_ABI,
       eventName: 'Deposit',
       onLogs: (logs) => {
         for (const log of logs) {
@@ -192,7 +192,7 @@ export class EventIndexerService {
     // Watch Withdrawal events
     this.withdrawalUnwatch = this.client.watchContractEvent({
       address: this.contractAddress,
-      abi: OPTICHANNEL_EVENTS_ABI,
+      abi: OPTIX_EVENTS_ABI,
       eventName: 'Withdrawal',
       onLogs: (logs) => {
         for (const log of logs) {
@@ -207,7 +207,7 @@ export class EventIndexerService {
     // Watch OptionSettled events
     this.settlementUnwatch = this.client.watchContractEvent({
       address: this.contractAddress,
-      abi: OPTICHANNEL_EVENTS_ABI,
+      abi: OPTIX_EVENTS_ABI,
       eventName: 'OptionSettled',
       onLogs: (logs) => {
         for (const log of logs) {
@@ -257,21 +257,21 @@ export class EventIndexerService {
     const [depositLogs, withdrawalLogs, settlementLogs] = await Promise.all([
       this.client.getContractEvents({
         address: this.contractAddress,
-        abi: OPTICHANNEL_EVENTS_ABI,
+        abi: OPTIX_EVENTS_ABI,
         eventName: 'Deposit',
         fromBlock,
         toBlock,
       }),
       this.client.getContractEvents({
         address: this.contractAddress,
-        abi: OPTICHANNEL_EVENTS_ABI,
+        abi: OPTIX_EVENTS_ABI,
         eventName: 'Withdrawal',
         fromBlock,
         toBlock,
       }),
       this.client.getContractEvents({
         address: this.contractAddress,
-        abi: OPTICHANNEL_EVENTS_ABI,
+        abi: OPTIX_EVENTS_ABI,
         eventName: 'OptionSettled',
         fromBlock,
         toBlock,
@@ -381,21 +381,21 @@ export class EventIndexerService {
       const [depositLogs, withdrawalLogs, settlementLogs] = await Promise.all([
         this.client.getContractEvents({
           address: this.contractAddress,
-          abi: OPTICHANNEL_EVENTS_ABI,
+          abi: OPTIX_EVENTS_ABI,
           eventName: 'Deposit',
           fromBlock: start,
           toBlock: end,
         }),
         this.client.getContractEvents({
           address: this.contractAddress,
-          abi: OPTICHANNEL_EVENTS_ABI,
+          abi: OPTIX_EVENTS_ABI,
           eventName: 'Withdrawal',
           fromBlock: start,
           toBlock: end,
         }),
         this.client.getContractEvents({
           address: this.contractAddress,
-          abi: OPTICHANNEL_EVENTS_ABI,
+          abi: OPTIX_EVENTS_ABI,
           eventName: 'OptionSettled',
           fromBlock: start,
           toBlock: end,

@@ -1,12 +1,12 @@
-# OptiChannel Smart Contracts
+# Optix Smart Contracts
 
-Settlement contracts for OptiChannel - gasless options trading via Yellow Network state channels.
+Settlement contracts for Optix - gasless options trading via Yellow Network state channels.
 
 ## Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                    OptiChannelSettlement.sol                     │
+│                    OptixSettlement.sol                     │
 ├─────────────────────────────────────────────────────────────────┤
 │  DEPOSITS/WITHDRAWALS                                           │
 │  ├── deposit(amount)           - Deposit USDC                   │
@@ -80,7 +80,7 @@ ETHERSCAN_API_KEY=your_etherscan_api_key
 
 ```bash
 source .env
-forge script script/Deploy.s.sol:DeployOptiChannelSepolia \
+forge script script/Deploy.s.sol:DeployOptixSepolia \
   --rpc-url sepolia \
   --broadcast \
   --verify
@@ -90,7 +90,7 @@ forge script script/Deploy.s.sol:DeployOptiChannelSepolia \
 
 ```bash
 source .env
-forge script script/Deploy.s.sol:DeployOptiChannelMainnet \
+forge script script/Deploy.s.sol:DeployOptixMainnet \
   --rpc-url mainnet \
   --broadcast \
   --verify
@@ -102,7 +102,7 @@ forge script script/Deploy.s.sol:DeployOptiChannelMainnet \
 
 | Contract | Address |
 |----------|---------|
-| OptiChannelSettlement | `0x7779c5E338e52Be395A2A5386f8CFBf6629f67CB` |
+| OptixSettlement | `0x7779c5E338e52Be395A2A5386f8CFBf6629f67CB` |
 | USDC | `0x1c7D4B196Cb0C7B01d743Fbc6116a902379C7238` |
 | Pyth Oracle | `0xDd24F84d36BF92C65F92307595335bdFab5Bbd21` |
 
@@ -110,7 +110,7 @@ forge script script/Deploy.s.sol:DeployOptiChannelMainnet \
 
 | Contract | Address |
 |----------|---------|
-| OptiChannelSettlement | `TBD - Deploy` |
+| OptixSettlement | `TBD - Deploy` |
 | USDC | `0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48` |
 | Pyth Oracle | `0x4305FB66699C3B2702D4d05CF36551390A4c69C6` |
 

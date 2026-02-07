@@ -13,7 +13,7 @@ export interface ServerConfig {
   priceUpdateInterval?: number;
 }
 
-export class OptiChannelServer {
+export class OptixServer {
   private app: Express;
   private httpServer: HttpServer;
   private wss: WebSocketServer | null = null;
@@ -257,7 +257,7 @@ export class OptiChannelServer {
     return new Promise((resolve) => {
       this.httpServer.listen(this.config.port, () => {
         console.log('═══════════════════════════════════════════════════════════════════');
-        console.log('  OPTICHANNEL API SERVER');
+        console.log('  OPTIX API SERVER');
         console.log('═══════════════════════════════════════════════════════════════════');
         console.log(`  REST API:    http://localhost:${this.config.port}/api`);
         console.log(`  Health:      http://localhost:${this.config.port}/health`);
@@ -300,4 +300,4 @@ export class OptiChannelServer {
 }
 
 // Export a default instance
-export const server = new OptiChannelServer();
+export const server = new OptixServer();

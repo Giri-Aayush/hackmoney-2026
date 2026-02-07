@@ -1,5 +1,5 @@
 {
-  "name": "optichannel",
+  "name": "optix",
   "version": "0.1.0",
   "description": "Gasless options trading protocol built on Yellow Network state channels",
   "type": "module",

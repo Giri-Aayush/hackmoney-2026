@@ -39,7 +39,7 @@ export interface SettlementResult {
 }
 
 export interface ContractAddresses {
-  optiChannel: Address;      // Main settlement contract
+  optix: Address;            // Main settlement contract
   usdc: Address;             // USDC token
   pyth: Address;             // Pyth oracle contract
 }

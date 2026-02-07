@@ -1,4 +1,4 @@
-// Yellow Network SDK wrapper for OptiChannel
+// Yellow Network SDK wrapper for Optix
 export * from './client.js';
 export * from './session.js';
 export * from './trading.js';

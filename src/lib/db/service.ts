@@ -4,7 +4,7 @@ import { Hex, Address } from 'viem';
 
 /**
  * Database Service
- * Handles all database operations for OptiChannel
+ * Handles all database operations for Optix
  */
 export class DatabaseService {
   // ============================================================================

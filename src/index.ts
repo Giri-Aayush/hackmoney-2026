@@ -1,4 +1,4 @@
-// OptiChannel - Gasless Options Trading Protocol
+// Optix - Gasless Options Trading Protocol
 // Built on Yellow Network State Channels
 
 // Core infrastructure
@@ -21,9 +21,9 @@ export type {
   OrderBookStats,
 } from './lib/options/index.js';
 
-// OptiChannel services
-export { OptiChannelService, OptiChannelMarketplace } from './lib/optichannel/index.js';
-export type { OptiChannelConfig, ActiveSession, MarketplaceConfig, Trade } from './lib/optichannel/index.js';
+// Optix services
+export { OptixService, OptixMarketplace } from './lib/optichannel/index.js';
+export type { OptixConfig, ActiveSession, MarketplaceConfig, Trade } from './lib/optichannel/index.js';
 
 // Pricing & Greeks
 export {
@@ -50,9 +50,9 @@ export type {
 } from './lib/strategies/index.js';
 
 // API server
-export { OptiChannelServer, server, state } from './api/index.js';
+export { OptixServer, server, state } from './api/index.js';
 export type { ServerConfig } from './api/index.js';
 
 // Version info
 export const VERSION = '0.1.0';
-export const PROTOCOL_NAME = 'OptiChannel';
+export const PROTOCOL_NAME = 'Optix';

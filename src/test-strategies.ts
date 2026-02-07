@@ -1,5 +1,5 @@
 /**
- * OptiChannel Multi-Leg Strategy Test
+ * Optix Multi-Leg Strategy Test
  *
  * Demonstrates option strategies like a real CEX:
  * - Bull/Bear Spreads
@@ -14,7 +14,7 @@ import { StrategyBuilder } from './lib/strategies/index.js';
 
 async function main() {
   console.log('═══════════════════════════════════════════════════════════════════');
-  console.log('  OPTICHANNEL - MULTI-LEG STRATEGY DEMO');
+  console.log('  OPTIX - MULTI-LEG STRATEGY DEMO');
   console.log('═══════════════════════════════════════════════════════════════════\n');
 
   // Get live price

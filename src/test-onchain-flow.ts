@@ -1,5 +1,5 @@
 /**
- * OptiChannel On-Chain Flow Test
+ * Optix On-Chain Flow Test
  *
  * Tests REAL on-chain transactions with 10 USDC:
  * 1. Approve USDC
@@ -18,7 +18,7 @@ import { DEFAULT_CONTRACTS } from './lib/settlement/service.js';
 
 const DEPOSIT_AMOUNT = parseUnits('10', 6); // 10 USDC (MIN_DEPOSIT requirement)
 
-const OPTICHANNEL_ABI = [
+const OPTIX_ABI = [
   { type: 'function', name: 'balances', inputs: [{ name: '', type: 'address' }], outputs: [{ type: 'uint256' }], stateMutability: 'view' },
   { type: 'function', name: 'deposit', inputs: [{ name: 'amount', type: 'uint256' }], outputs: [], stateMutability: 'nonpayable' },
   { type: 'function', name: 'withdrawDirect', inputs: [{ name: 'amount', type: 'uint256' }], outputs: [], stateMutability: 'nonpayable' },
@@ -33,7 +33,7 @@ const ERC20_ABI = [
 
 async function main() {
   console.log('═══════════════════════════════════════════════════════════════════');
-  console.log('  OPTICHANNEL ON-CHAIN FLOW TEST');
+  console.log('  OPTIX ON-CHAIN FLOW TEST');
   console.log('  Testing with 10 USDC (minimum deposit)');
   console.log('═══════════════════════════════════════════════════════════════════\n');
 
@@ -59,7 +59,7 @@ async function main() {
   });
 
   console.log(`Wallet: ${walletAddress}`);
-  console.log(`Contract: ${DEFAULT_CONTRACTS.optiChannel}`);
+  console.log(`Contract: ${DEFAULT_CONTRACTS.optix}`);
   console.log(`Amount: 10 USDC\n`);
 
   // ═══════════════════════════════════════════════════════════════════
@@ -81,12 +81,12 @@ async function main() {
   console.log(`   USDC: ${formatUnits(usdcBalance, 6)} USDC`);
 
   const contractBalance = await publicClient.readContract({
-    address: DEFAULT_CONTRACTS.optiChannel,
-    abi: OPTICHANNEL_ABI,
+    address: DEFAULT_CONTRACTS.optix,
+    abi: OPTIX_ABI,
     functionName: 'balances',
     args: [walletAddress],
   }) as bigint;
-  console.log(`   OptiChannel Balance: ${formatUnits(contractBalance, 6)} USDC\n`);
+  console.log(`   Optix Balance: ${formatUnits(contractBalance, 6)} USDC\n`);
 
   if (usdcBalance < DEPOSIT_AMOUNT) {
     console.log(`   ✗ Insufficient USDC! Need 10 USDC, have ${formatUnits(usdcBalance, 6)}`);
@@ -104,7 +104,7 @@ async function main() {
     address: DEFAULT_CONTRACTS.usdc,
     abi: ERC20_ABI,
     functionName: 'allowance',
-    args: [walletAddress, DEFAULT_CONTRACTS.optiChannel],
+    args: [walletAddress, DEFAULT_CONTRACTS.optix],
   }) as bigint;
   console.log(`   Current allowance: ${formatUnits(currentAllowance, 6)} USDC`);
 
@@ -115,7 +115,7 @@ async function main() {
       address: DEFAULT_CONTRACTS.usdc,
       abi: ERC20_ABI,
       functionName: 'approve',
-      args: [DEFAULT_CONTRACTS.optiChannel, DEPOSIT_AMOUNT],
+      args: [DEFAULT_CONTRACTS.optix, DEPOSIT_AMOUNT],
     });
 
     console.log(`   Tx: ${approveTx}`);
@@ -134,11 +134,11 @@ async function main() {
   console.log('STEP 3: Deposit 10 USDC');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
-  console.log('   Depositing 10 USDC to OptiChannel...');
+  console.log('   Depositing 10 USDC to Optix...');
 
   const depositTx = await walletClient.writeContract({
-    address: DEFAULT_CONTRACTS.optiChannel,
-    abi: OPTICHANNEL_ABI,
+    address: DEFAULT_CONTRACTS.optix,
+    abi: OPTIX_ABI,
     functionName: 'deposit',
     args: [DEPOSIT_AMOUNT],
   });
@@ -158,12 +158,12 @@ async function main() {
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
   const newContractBalance = await publicClient.readContract({
-    address: DEFAULT_CONTRACTS.optiChannel,
-    abi: OPTICHANNEL_ABI,
+    address: DEFAULT_CONTRACTS.optix,
+    abi: OPTIX_ABI,
     functionName: 'balances',
     args: [walletAddress],
   }) as bigint;
-  console.log(`   OptiChannel Balance: ${formatUnits(newContractBalance, 6)} USDC`);
+  console.log(`   Optix Balance: ${formatUnits(newContractBalance, 6)} USDC`);
 
   const newUsdcBalance = await publicClient.readContract({
     address: DEFAULT_CONTRACTS.usdc,
@@ -186,11 +186,11 @@ async function main() {
   console.log('STEP 5: Withdraw 10 USDC Back');
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
-  console.log('   Withdrawing 10 USDC from OptiChannel...');
+  console.log('   Withdrawing 10 USDC from Optix...');
 
   const withdrawTx = await walletClient.writeContract({
-    address: DEFAULT_CONTRACTS.optiChannel,
-    abi: OPTICHANNEL_ABI,
+    address: DEFAULT_CONTRACTS.optix,
+    abi: OPTIX_ABI,
     functionName: 'withdrawDirect',
     args: [DEPOSIT_AMOUNT],
   });
@@ -210,12 +210,12 @@ async function main() {
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
   const finalContractBalance = await publicClient.readContract({
-    address: DEFAULT_CONTRACTS.optiChannel,
-    abi: OPTICHANNEL_ABI,
+    address: DEFAULT_CONTRACTS.optix,
+    abi: OPTIX_ABI,
     functionName: 'balances',
     args: [walletAddress],
   }) as bigint;
-  console.log(`   OptiChannel Balance: ${formatUnits(finalContractBalance, 6)} USDC`);
+  console.log(`   Optix Balance: ${formatUnits(finalContractBalance, 6)} USDC`);
 
   const finalUsdcBalance = await publicClient.readContract({
     address: DEFAULT_CONTRACTS.usdc,

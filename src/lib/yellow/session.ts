@@ -8,7 +8,7 @@ import type {
 } from '@erc7824/nitrolite';
 import { YellowClient } from './client.js';
 
-export const OPTICHANNEL_PROTOCOL = 'optichannel-v1';
+export const OPTIX_PROTOCOL = 'optix-v1';
 
 export interface AppSessionConfig {
   participants: [Address, Address]; // [writer, buyer] or [user, clearnode]
@@ -31,7 +31,7 @@ interface RpcResponse {
 }
 
 /**
- * Manages app sessions for OptiChannel.
+ * Manages app sessions for Optix.
  * An app session represents a trading relationship between two parties.
  */
 export class SessionManager {
@@ -50,7 +50,7 @@ export class SessionManager {
 
     // Define the options application
     const definition: RPCAppDefinition = {
-      application: OPTICHANNEL_PROTOCOL,
+      application: OPTIX_PROTOCOL,
       protocol: 'NitroRPC/0.2' as RPCProtocolVersion,
       participants: participants as Hex[],
       weights: [50, 50], // Equal participation

@@ -1,5 +1,5 @@
 /**
- * Test script for full OptiChannel trading flow.
+ * Test script for full Optix trading flow.
  *
  * Run: npm run test:trading
  */
@@ -9,12 +9,12 @@ import { privateKeyToAccount } from 'viem/accounts';
 import { Hex, Address } from 'viem';
 import { YellowClient } from './lib/yellow/index.js';
 import { PythClient } from './lib/pyth/index.js';
-import { OptiChannelService } from './lib/optichannel/index.js';
+import { OptixService } from './lib/optichannel/index.js';
 import { config } from './config/index.js';
 
 async function main() {
   console.log('='.repeat(60));
-  console.log('OptiChannel - Full Trading Flow Test');
+  console.log('Optix - Full Trading Flow Test');
   console.log('='.repeat(60));
   console.log();
 
@@ -34,22 +34,22 @@ async function main() {
   await yellowClient.connectAndAuthenticate();
   console.log('Connected and authenticated!\n');
 
-  console.log('[2/5] Initializing OptiChannel Service...');
+  console.log('[2/5] Initializing Optix Service...');
   console.log('-'.repeat(40));
 
   const pythClient = new PythClient();
-  const optiChannel = new OptiChannelService({
+  const optix = new OptixService({
     yellowClient,
     pythClient,
   });
 
-  console.log(`Service address: ${optiChannel.address}`);
+  console.log(`Service address: ${optix.address}`);
   console.log();
 
   console.log('[3/5] Fetching Current Market Price...');
   console.log('-'.repeat(40));
 
-  const ethPrice = await optiChannel.getCurrentEthPrice();
+  const ethPrice = await optix.getCurrentEthPrice();
   console.log(`ETH/USD: $${ethPrice.toFixed(2)}`);
   console.log();
 
@@ -58,7 +58,7 @@ async function main() {
 
   const mockCounterparty = '0x1234567890123456789012345678901234567890' as Address;
 
-  const { option, session, quote } = await optiChannel.simulateFullTrade(mockCounterparty);
+  const { option, session, quote } = await optix.simulateFullTrade(mockCounterparty);
 
   console.log('[5/5] Trade Summary...');
   console.log('-'.repeat(40));
@@ -86,12 +86,12 @@ async function main() {
   console.log(`  Max Profit: ${quote.maxProfit === 'unlimited' ? 'Unlimited' : `$${quote.maxProfit.toFixed(2)}`}`);
 
   console.log('\n' + '='.repeat(60));
-  console.log('Active Sessions:', optiChannel.getAllActiveSessions().length);
-  console.log('Total Options:', optiChannel.getAllOptions().length);
+  console.log('Active Sessions:', optix.getAllActiveSessions().length);
+  console.log('Total Options:', optix.getAllOptions().length);
   console.log('='.repeat(60));
 
   console.log('\nCleaning up...');
-  await optiChannel.closeSession(session.sessionId);
+  await optix.closeSession(session.sessionId);
   await yellowClient.disconnect();
 
   console.log('\n' + '='.repeat(60));

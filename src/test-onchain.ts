@@ -5,7 +5,7 @@ import { config } from './config/index.js';
 import { DEFAULT_CONTRACTS } from './lib/settlement/service.js';
 
 // Contract ABIs
-const OPTICHANNEL_ABI = [
+const OPTIX_ABI = [
   { type: 'function', name: 'balances', inputs: [{ name: '', type: 'address' }], outputs: [{ type: 'uint256' }], stateMutability: 'view' },
   { type: 'function', name: 'withdrawalNonces', inputs: [{ name: '', type: 'address' }], outputs: [{ type: 'uint256' }], stateMutability: 'view' },
   { type: 'function', name: 'MIN_DEPOSIT', inputs: [], outputs: [{ type: 'uint256' }], stateMutability: 'view' },
@@ -25,13 +25,13 @@ const ERC20_ABI = [
 
 async function main() {
   console.log('═══════════════════════════════════════════════════════════════════');
-  console.log('  OPTICHANNEL ON-CHAIN TEST - ETHEREUM SEPOLIA');
+  console.log('  OPTIX ON-CHAIN TEST - ETHEREUM SEPOLIA');
   console.log('═══════════════════════════════════════════════════════════════════\n');
 
   // Setup
   const rpcUrl = process.env.SEPOLIA_RPC_URL || config.chain.rpcUrl;
   console.log(`RPC URL: ${rpcUrl.substring(0, 50)}...`);
-  console.log(`Contract: ${DEFAULT_CONTRACTS.optiChannel}`);
+  console.log(`Contract: ${DEFAULT_CONTRACTS.optix}`);
   console.log(`USDC: ${DEFAULT_CONTRACTS.usdc}`);
   console.log(`Pyth: ${DEFAULT_CONTRACTS.pyth}\n`);
 
@@ -54,7 +54,7 @@ async function main() {
 
   try {
     // Check if contract exists
-    const code = await publicClient.getCode({ address: DEFAULT_CONTRACTS.optiChannel });
+    const code = await publicClient.getCode({ address: DEFAULT_CONTRACTS.optix });
     if (code && code !== '0x') {
       console.log('   ✓ Contract deployed and has bytecode');
       console.log(`   Bytecode size: ${(code.length - 2) / 2} bytes\n`);
@@ -65,38 +65,38 @@ async function main() {
 
     // Read contract constants
     const minDeposit = await publicClient.readContract({
-      address: DEFAULT_CONTRACTS.optiChannel,
-      abi: OPTICHANNEL_ABI,
+      address: DEFAULT_CONTRACTS.optix,
+      abi: OPTIX_ABI,
       functionName: 'MIN_DEPOSIT',
     });
     console.log(`   MIN_DEPOSIT: ${formatUnits(minDeposit as bigint, 6)} USDC`);
 
     const challengePeriod = await publicClient.readContract({
-      address: DEFAULT_CONTRACTS.optiChannel,
-      abi: OPTICHANNEL_ABI,
+      address: DEFAULT_CONTRACTS.optix,
+      abi: OPTIX_ABI,
       functionName: 'CHALLENGE_PERIOD',
     });
     console.log(`   CHALLENGE_PERIOD: ${Number(challengePeriod) / 3600} hours`);
 
     const usdcAddr = await publicClient.readContract({
-      address: DEFAULT_CONTRACTS.optiChannel,
-      abi: OPTICHANNEL_ABI,
+      address: DEFAULT_CONTRACTS.optix,
+      abi: OPTIX_ABI,
       functionName: 'usdc',
     });
     console.log(`   USDC address: ${usdcAddr}`);
     console.log(`   ✓ Matches expected: ${usdcAddr === DEFAULT_CONTRACTS.usdc}`);
 
     const pythAddr = await publicClient.readContract({
-      address: DEFAULT_CONTRACTS.optiChannel,
-      abi: OPTICHANNEL_ABI,
+      address: DEFAULT_CONTRACTS.optix,
+      abi: OPTIX_ABI,
       functionName: 'pyth',
     });
     console.log(`   Pyth address: ${pythAddr}`);
     console.log(`   ✓ Matches expected: ${pythAddr === DEFAULT_CONTRACTS.pyth}`);
 
     const priceId = await publicClient.readContract({
-      address: DEFAULT_CONTRACTS.optiChannel,
-      abi: OPTICHANNEL_ABI,
+      address: DEFAULT_CONTRACTS.optix,
+      abi: OPTIX_ABI,
       functionName: 'ethUsdPriceId',
     });
     console.log(`   ETH/USD Price ID: ${priceId}`);
@@ -137,9 +137,9 @@ async function main() {
         address: DEFAULT_CONTRACTS.usdc,
         abi: ERC20_ABI,
         functionName: 'allowance',
-        args: [walletAddress, DEFAULT_CONTRACTS.optiChannel],
+        args: [walletAddress, DEFAULT_CONTRACTS.optix],
       });
-      console.log(`   Allowance to OptiChannel: ${formatUnits(allowance as bigint, 6)} USDC`);
+      console.log(`   Allowance to Optix: ${formatUnits(allowance as bigint, 6)} USDC`);
     }
   } catch (error) {
     console.log(`   ✗ Error reading USDC: ${error}`);
@@ -155,19 +155,19 @@ async function main() {
       const ethBalance = await publicClient.getBalance({ address: walletAddress });
       console.log(`   ETH balance: ${formatUnits(ethBalance, 18)} ETH`);
 
-      // OptiChannel balance
+      // Optix balance
       const optiBalance = await publicClient.readContract({
-        address: DEFAULT_CONTRACTS.optiChannel,
-        abi: OPTICHANNEL_ABI,
+        address: DEFAULT_CONTRACTS.optix,
+        abi: OPTIX_ABI,
         functionName: 'balances',
         args: [walletAddress],
       });
-      console.log(`   OptiChannel balance: ${formatUnits(optiBalance as bigint, 6)} USDC`);
+      console.log(`   Optix balance: ${formatUnits(optiBalance as bigint, 6)} USDC`);
 
       // Nonce
       const nonce = await publicClient.readContract({
-        address: DEFAULT_CONTRACTS.optiChannel,
-        abi: OPTICHANNEL_ABI,
+        address: DEFAULT_CONTRACTS.optix,
+        abi: OPTIX_ABI,
         functionName: 'withdrawalNonces',
         args: [walletAddress],
       });
@@ -205,7 +205,7 @@ async function main() {
 
   // Summary
   console.log('Contract Links:');
-  console.log(`  OptiChannel: https://sepolia.etherscan.io/address/${DEFAULT_CONTRACTS.optiChannel}`);
+  console.log(`  Optix: https://sepolia.etherscan.io/address/${DEFAULT_CONTRACTS.optix}`);
   console.log(`  USDC: https://sepolia.etherscan.io/address/${DEFAULT_CONTRACTS.usdc}`);
   console.log(`  Pyth: https://sepolia.etherscan.io/address/${DEFAULT_CONTRACTS.pyth}`);
 }

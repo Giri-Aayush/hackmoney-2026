@@ -1,14 +1,14 @@
 /**
- * OptiChannel API Server Entry Point
+ * Optix API Server Entry Point
  *
  * Start with: npm run server
  */
 
-import { OptiChannelServer } from './api/index.js';
+import { OptixServer } from './api/index.js';
 
 const PORT = parseInt(process.env.PORT || '8081', 10);
 
-const server = new OptiChannelServer({
+const server = new OptixServer({
   port: PORT,
   enableWebSocket: true,
   priceUpdateInterval: 5000, // 5 seconds

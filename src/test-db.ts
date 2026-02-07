@@ -1,5 +1,5 @@
 /**
- * OptiChannel Database Test
+ * Optix Database Test
  *
  * Tests Supabase connection and all database operations.
  */
@@ -12,7 +12,7 @@ const TEST_WALLET_2 = '0xTestWallet2345678901234567890123456789012';
 
 async function main() {
   console.log('═══════════════════════════════════════════════════════════════════');
-  console.log('  OPTICHANNEL DATABASE TEST');
+  console.log('  OPTIX DATABASE TEST');
   console.log('═══════════════════════════════════════════════════════════════════\n');
 
   // Check config

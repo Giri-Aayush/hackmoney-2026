@@ -1,5 +1,5 @@
 /**
- * OptiChannel Full Trading Flow Test
+ * Optix Full Trading Flow Test
  *
  * Tests REAL on-chain trading with USDC:
  * 1. Approve & Deposit USDC
@@ -20,7 +20,7 @@ import { PythClient } from './lib/pyth/client.js';
 
 const DEPOSIT_AMOUNT = parseUnits('10', 6); // 10 USDC
 
-const OPTICHANNEL_ABI = [
+const OPTIX_ABI = [
   { type: 'function', name: 'balances', inputs: [{ name: '', type: 'address' }], outputs: [{ type: 'uint256' }], stateMutability: 'view' },
   { type: 'function', name: 'deposit', inputs: [{ name: 'amount', type: 'uint256' }], outputs: [], stateMutability: 'nonpayable' },
   { type: 'function', name: 'withdrawDirect', inputs: [{ name: 'amount', type: 'uint256' }], outputs: [], stateMutability: 'nonpayable' },
@@ -72,7 +72,7 @@ const transactions: TxRecord[] = [];
 
 async function main() {
   console.log('═══════════════════════════════════════════════════════════════════');
-  console.log('  OPTICHANNEL FULL TRADING FLOW TEST');
+  console.log('  OPTIX FULL TRADING FLOW TEST');
   console.log('  Real on-chain option trading');
   console.log('═══════════════════════════════════════════════════════════════════\n');
 
@@ -103,7 +103,7 @@ async function main() {
   const ethPrice = Math.round(priceData.price);
 
   console.log(`Wallet: ${walletAddress}`);
-  console.log(`Contract: ${DEFAULT_CONTRACTS.optiChannel}`);
+  console.log(`Contract: ${DEFAULT_CONTRACTS.optix}`);
   console.log(`ETH Price: $${ethPrice}\n`);
 
   // ═══════════════════════════════════════════════════════════════════
@@ -121,8 +121,8 @@ async function main() {
     args: [walletAddress],
   }) as bigint;
   const initialContract = await publicClient.readContract({
-    address: DEFAULT_CONTRACTS.optiChannel,
-    abi: OPTICHANNEL_ABI,
+    address: DEFAULT_CONTRACTS.optix,
+    abi: OPTIX_ABI,
     functionName: 'balances',
     args: [walletAddress],
   }) as bigint;
@@ -147,7 +147,7 @@ async function main() {
     address: DEFAULT_CONTRACTS.usdc,
     abi: ERC20_ABI,
     functionName: 'allowance',
-    args: [walletAddress, DEFAULT_CONTRACTS.optiChannel],
+    args: [walletAddress, DEFAULT_CONTRACTS.optix],
   }) as bigint;
 
   if (currentAllowance < DEPOSIT_AMOUNT) {
@@ -156,7 +156,7 @@ async function main() {
       address: DEFAULT_CONTRACTS.usdc,
       abi: ERC20_ABI,
       functionName: 'approve',
-      args: [DEFAULT_CONTRACTS.optiChannel, DEPOSIT_AMOUNT],
+      args: [DEFAULT_CONTRACTS.optix, DEPOSIT_AMOUNT],
     });
     const approveReceipt = await publicClient.waitForTransactionReceipt({ hash: approveTx });
     transactions.push({ step: 'Approve USDC', hash: approveTx, block: approveReceipt.blockNumber, gasUsed: approveReceipt.gasUsed });
@@ -174,8 +174,8 @@ async function main() {
 
   console.log('   Depositing...');
   const depositTx = await walletClient.writeContract({
-    address: DEFAULT_CONTRACTS.optiChannel,
-    abi: OPTICHANNEL_ABI,
+    address: DEFAULT_CONTRACTS.optix,
+    abi: OPTIX_ABI,
     functionName: 'deposit',
     args: [DEPOSIT_AMOUNT],
   });
@@ -205,8 +205,8 @@ async function main() {
 
   console.log('   Creating option...');
   const createTx = await walletClient.writeContract({
-    address: DEFAULT_CONTRACTS.optiChannel,
-    abi: OPTICHANNEL_ABI,
+    address: DEFAULT_CONTRACTS.optix,
+    abi: OPTIX_ABI,
     functionName: 'createOption',
     args: [strikePrice, premium, amount, expiry, isCall],
   });
@@ -230,8 +230,8 @@ async function main() {
 
   try {
     const option = await publicClient.readContract({
-      address: DEFAULT_CONTRACTS.optiChannel,
-      abi: OPTICHANNEL_ABI,
+      address: DEFAULT_CONTRACTS.optix,
+      abi: OPTIX_ABI,
       functionName: 'getOption',
       args: [optionId as Hex],
     }) as any;
@@ -256,8 +256,8 @@ async function main() {
 
   console.log('   Cancelling option...');
   const cancelTx = await walletClient.writeContract({
-    address: DEFAULT_CONTRACTS.optiChannel,
-    abi: OPTICHANNEL_ABI,
+    address: DEFAULT_CONTRACTS.optix,
+    abi: OPTIX_ABI,
     functionName: 'cancelOption',
     args: [optionId as Hex],
   });
@@ -273,8 +273,8 @@ async function main() {
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
   const contractBalance = await publicClient.readContract({
-    address: DEFAULT_CONTRACTS.optiChannel,
-    abi: OPTICHANNEL_ABI,
+    address: DEFAULT_CONTRACTS.optix,
+    abi: OPTIX_ABI,
     functionName: 'balances',
     args: [walletAddress],
   }) as bigint;
@@ -283,8 +283,8 @@ async function main() {
   console.log('   Withdrawing...');
 
   const withdrawTx = await walletClient.writeContract({
-    address: DEFAULT_CONTRACTS.optiChannel,
-    abi: OPTICHANNEL_ABI,
+    address: DEFAULT_CONTRACTS.optix,
+    abi: OPTIX_ABI,
     functionName: 'withdrawDirect',
     args: [contractBalance],
   });
@@ -307,8 +307,8 @@ async function main() {
     args: [walletAddress],
   }) as bigint;
   const finalContract = await publicClient.readContract({
-    address: DEFAULT_CONTRACTS.optiChannel,
-    abi: OPTICHANNEL_ABI,
+    address: DEFAULT_CONTRACTS.optix,
+    abi: OPTIX_ABI,
     functionName: 'balances',
     args: [walletAddress],
   }) as bigint;

@@ -1,5 +1,5 @@
 /**
- * OptiChannel API Test Script
+ * Optix API Test Script
  *
  * Tests all API endpoints to verify the server is working correctly.
  */
@@ -208,7 +208,7 @@ async function testOrderBookStats() {
 
 async function main() {
   console.log('═══════════════════════════════════════════════════════════════════');
-  console.log('  OPTICHANNEL API TEST SUITE');
+  console.log('  OPTIX API TEST SUITE');
   console.log('═══════════════════════════════════════════════════════════════════');
   console.log(`API URL: ${API_URL}`);
   console.log(`Test Wallet: ${WALLET_ADDRESS}`);

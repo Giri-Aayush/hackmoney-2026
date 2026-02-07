@@ -1,5 +1,5 @@
 /**
- * OptiChannel Portfolio & Pricing Test
+ * Optix Portfolio & Pricing Test
  *
  * Demonstrates CEX-like features:
  * - Real-time option pricing with Black-Scholes
@@ -16,7 +16,7 @@ import { Hex } from 'viem';
 
 async function main() {
   console.log('═══════════════════════════════════════════════════════════════════');
-  console.log('  OPTICHANNEL - CEX-LIKE OPTIONS TRADING DEMO');
+  console.log('  OPTIX - CEX-LIKE OPTIONS TRADING DEMO');
   console.log('═══════════════════════════════════════════════════════════════════\n');
 
   // Initialize Pyth for live prices

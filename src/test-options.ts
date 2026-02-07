@@ -13,7 +13,7 @@ import { config } from './config/index.js';
 
 async function main() {
   console.log('='.repeat(60));
-  console.log('OptiChannel - Options Engine Test');
+  console.log('Optix - Options Engine Test');
   console.log('='.repeat(60));
   console.log();
 

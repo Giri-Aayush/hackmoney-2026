@@ -1,2 +1,2 @@
-export { OptiChannelService, type OptiChannelConfig, type ActiveSession } from './service.js';
-export { OptiChannelMarketplace, type MarketplaceConfig, type Trade } from './marketplace.js';
+export { OptixService, type OptixConfig, type ActiveSession } from './service.js';
+export { OptixMarketplace, type MarketplaceConfig, type Trade } from './marketplace.js';

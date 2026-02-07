@@ -1,5 +1,5 @@
 /**
- * OptiChannel API Flow Test
+ * Optix API Flow Test
  *
  * Run this WHILE the server is running to see logs in the server terminal.
  * This tests the complete API flow: price, options, trading
@@ -19,7 +19,7 @@ const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function main() {
   console.log('═══════════════════════════════════════════════════════════════════');
-  console.log('  OPTICHANNEL API FLOW TEST');
+  console.log('  OPTIX API FLOW TEST');
   console.log('  Testing against: ' + API_URL);
   console.log('═══════════════════════════════════════════════════════════════════\n');
 

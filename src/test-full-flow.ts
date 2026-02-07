@@ -1,5 +1,5 @@
 /**
- * OptiChannel Full Flow Test
+ * Optix Full Flow Test
  *
  * Tests the complete trading flow from user creation to settlement.
  * Watch your Supabase dashboard to see data appear in real-time!
@@ -20,7 +20,7 @@ function sleep(ms: number) {
 
 async function main() {
   console.log('═══════════════════════════════════════════════════════════════════');
-  console.log('  OPTICHANNEL FULL FLOW TEST');
+  console.log('  OPTIX FULL FLOW TEST');
   console.log('  Watch your Supabase dashboard: https://supabase.com/dashboard');
   console.log('═══════════════════════════════════════════════════════════════════\n');
 

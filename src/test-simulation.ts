@@ -1,5 +1,5 @@
 /**
- * OptiChannel Real-World Simulation
+ * Optix Real-World Simulation
  *
  * Simulates realistic trading scenarios:
  * - Multiple concurrent users (market makers, retail, whales)
@@ -77,7 +77,7 @@ interface SimOption {
 
 async function main() {
   console.log('═══════════════════════════════════════════════════════════════════');
-  console.log('  OPTICHANNEL REAL-WORLD SIMULATION');
+  console.log('  OPTIX REAL-WORLD SIMULATION');
   console.log('═══════════════════════════════════════════════════════════════════\n');
 
   if (!config.supabase.url) {

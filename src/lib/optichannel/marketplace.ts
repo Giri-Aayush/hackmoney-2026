@@ -18,7 +18,7 @@ export interface Trade {
   sessionId?: Hex;
 }
 
-export class OptiChannelMarketplace {
+export class OptixMarketplace {
   private yellowClient: YellowClient;
   private orderBook: OptionsOrderBook;
   private pythClient: PythClient;
@@ -75,7 +75,7 @@ export class OptiChannelMarketplace {
     try {
       const response = await this.yellowClient.createAppSession({
         definition: {
-          application: 'optichannel',
+          application: 'optix',
           protocol: RPCProtocolVersion.NitroRPC_0_2,
           participants: [buyer, seller],
           weights: [50, 50],

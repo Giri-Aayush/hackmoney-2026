@@ -1,5 +1,5 @@
 /**
- * Test script for OptiChannel marketplace (order book model).
+ * Test script for Optix marketplace (order book model).
  *
  * Run: npm run test:marketplace
  */
@@ -9,12 +9,12 @@ import { privateKeyToAccount } from 'viem/accounts';
 import { Hex, Address } from 'viem';
 import { YellowClient } from './lib/yellow/index.js';
 import { PythClient } from './lib/pyth/index.js';
-import { OptiChannelMarketplace } from './lib/optichannel/index.js';
+import { OptixMarketplace } from './lib/optichannel/index.js';
 import { config } from './config/index.js';
 
 async function main() {
   console.log('='.repeat(60));
-  console.log('OptiChannel - Marketplace Test');
+  console.log('Optix - Marketplace Test');
   console.log('='.repeat(60));
   console.log();
 
@@ -38,7 +38,7 @@ async function main() {
   console.log('-'.repeat(40));
 
   const pythClient = new PythClient();
-  const marketplace = new OptiChannelMarketplace({
+  const marketplace = new OptixMarketplace({
     yellowClient,
     pythClient,
   });

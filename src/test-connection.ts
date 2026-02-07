@@ -16,7 +16,7 @@ import { config } from './config/index.js';
 
 async function main() {
   console.log('='.repeat(60));
-  console.log('OptiChannel - Yellow Network Connection Test');
+  console.log('Optix - Yellow Network Connection Test');
   console.log('='.repeat(60));
   console.log();
 

@@ -1,5 +1,5 @@
 /**
- * OptiChannel REAL End-to-End Test
+ * Optix REAL End-to-End Test
  *
  * 1. Clear all Supabase tables
  * 2. REAL on-chain: Approve + Deposit 10 USDC
@@ -21,7 +21,7 @@ import { createClient } from '@supabase/supabase-js';
 const supabase = createClient(config.supabase.url, config.supabase.serviceKey);
 const DEPOSIT_AMOUNT = parseUnits('10', 6); // 10 USDC
 
-const OPTICHANNEL_ABI = [
+const OPTIX_ABI = [
   { type: 'function', name: 'balances', inputs: [{ name: '', type: 'address' }], outputs: [{ type: 'uint256' }], stateMutability: 'view' },
   { type: 'function', name: 'deposit', inputs: [{ name: 'amount', type: 'uint256' }], outputs: [], stateMutability: 'nonpayable' },
   { type: 'function', name: 'withdrawDirect', inputs: [{ name: 'amount', type: 'uint256' }], outputs: [], stateMutability: 'nonpayable' },
@@ -46,7 +46,7 @@ async function clearTables() {
 
 async function main() {
   console.log('═══════════════════════════════════════════════════════════════════');
-  console.log('  OPTICHANNEL REAL END-TO-END TEST');
+  console.log('  OPTIX REAL END-TO-END TEST');
   console.log('  On-chain USDC + Supabase database');
   console.log('═══════════════════════════════════════════════════════════════════\n');
 
@@ -63,7 +63,7 @@ async function main() {
   const walletClient = createWalletClient({ account, chain: sepolia, transport: http(rpcUrl) });
 
   console.log(`Wallet: ${walletAddress}`);
-  console.log(`Contract: ${DEFAULT_CONTRACTS.optiChannel}\n`);
+  console.log(`Contract: ${DEFAULT_CONTRACTS.optix}\n`);
 
   // ═══════════════════════════════════════════════════════════════════
   // STEP 1: Clear Tables
@@ -98,14 +98,14 @@ async function main() {
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
   const allowance = await publicClient.readContract({
     address: DEFAULT_CONTRACTS.usdc, abi: ERC20_ABI, functionName: 'allowance',
-    args: [walletAddress, DEFAULT_CONTRACTS.optiChannel],
+    args: [walletAddress, DEFAULT_CONTRACTS.optix],
   }) as bigint;
 
   if (allowance < DEPOSIT_AMOUNT) {
     console.log('   Sending approve tx...');
     const approveTx = await walletClient.writeContract({
       address: DEFAULT_CONTRACTS.usdc, abi: ERC20_ABI, functionName: 'approve',
-      args: [DEFAULT_CONTRACTS.optiChannel, DEPOSIT_AMOUNT],
+      args: [DEFAULT_CONTRACTS.optix, DEPOSIT_AMOUNT],
     });
     await publicClient.waitForTransactionReceipt({ hash: approveTx });
     txHashes.push({ step: 'Approve', hash: approveTx });
@@ -122,7 +122,7 @@ async function main() {
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
   console.log('   Sending deposit tx...');
   const depositTx = await walletClient.writeContract({
-    address: DEFAULT_CONTRACTS.optiChannel, abi: OPTICHANNEL_ABI, functionName: 'deposit',
+    address: DEFAULT_CONTRACTS.optix, abi: OPTIX_ABI, functionName: 'deposit',
     args: [DEPOSIT_AMOUNT],
   });
   await publicClient.waitForTransactionReceipt({ hash: depositTx });
@@ -190,7 +190,7 @@ async function main() {
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
   console.log('   Sending withdraw tx...');
   const withdrawTx = await walletClient.writeContract({
-    address: DEFAULT_CONTRACTS.optiChannel, abi: OPTICHANNEL_ABI, functionName: 'withdrawDirect',
+    address: DEFAULT_CONTRACTS.optix, abi: OPTIX_ABI, functionName: 'withdrawDirect',
     args: [DEPOSIT_AMOUNT],
   });
   await publicClient.waitForTransactionReceipt({ hash: withdrawTx });

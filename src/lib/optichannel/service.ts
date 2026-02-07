@@ -3,7 +3,7 @@ import { YellowClient, CreateAppSessionRequestParams, RPCAppSessionAllocation, R
 import { OptionsEngine, Option, CreateOptionParams, OptionQuote } from '../options/index.js';
 import { PythClient } from '../pyth/index.js';
 
-export interface OptiChannelConfig {
+export interface OptixConfig {
   yellowClient: YellowClient;
   pythClient?: PythClient;
 }
@@ -15,13 +15,13 @@ export interface ActiveSession {
   createdAt: number;
 }
 
-export class OptiChannelService {
+export class OptixService {
   private yellowClient: YellowClient;
   private optionsEngine: OptionsEngine;
   private pythClient: PythClient;
   private activeSessions: Map<Hex, ActiveSession> = new Map();
 
-  constructor(config: OptiChannelConfig) {
+  constructor(config: OptixConfig) {
     this.yellowClient = config.yellowClient;
     this.pythClient = config.pythClient || new PythClient();
     this.optionsEngine = new OptionsEngine(
@@ -41,7 +41,7 @@ export class OptiChannelService {
 
   async createOption(params: CreateOptionParams): Promise<Option> {
     const option = await this.optionsEngine.createOption(params);
-    console.log(`[OptiChannel] Option created: ${option.id.slice(0, 10)}...`);
+    console.log(`[Optix] Option created: ${option.id.slice(0, 10)}...`);
     return option;
   }
 
@@ -58,7 +58,7 @@ export class OptiChannelService {
     option: Option,
     collateralAmount: bigint
   ): Promise<ActiveSession> {
-    console.log(`[OptiChannel] Opening trading session with ${counterparty.slice(0, 10)}...`);
+    console.log(`[Optix] Opening trading session with ${counterparty.slice(0, 10)}...`);
 
     const allocations: RPCAppSessionAllocation[] = [
       {
@@ -75,7 +75,7 @@ export class OptiChannelService {
 
     const sessionParams: CreateAppSessionRequestParams = {
       definition: {
-        application: 'optichannel',
+        application: 'optix',
         protocol: RPCProtocolVersion.NitroRPC_0_2,
         participants: [this.yellowClient.address, counterparty],
         weights: [100, 0],
@@ -99,11 +99,11 @@ export class OptiChannelService {
       };
 
       this.activeSessions.set(sessionId, session);
-      console.log(`[OptiChannel] Session opened: ${sessionId.slice(0, 10)}...`);
+      console.log(`[Optix] Session opened: ${sessionId.slice(0, 10)}...`);
 
       return session;
     } catch (error) {
-      console.log(`[OptiChannel] Session creation via ClearNode skipped (sandbox), using local session`);
+      console.log(`[Optix] Session creation via ClearNode skipped (sandbox), using local session`);
 
       const sessionId = `0x${Date.now().toString(16)}${'0'.repeat(48)}`.slice(0, 66) as Hex;
 
@@ -138,9 +138,9 @@ export class OptiChannelService {
 
     try {
       await this.yellowClient.sendApplicationMessage(sessionId, message);
-      console.log(`[OptiChannel] Sent ${action} message in session ${sessionId.slice(0, 10)}...`);
+      console.log(`[Optix] Sent ${action} message in session ${sessionId.slice(0, 10)}...`);
     } catch (error) {
-      console.log(`[OptiChannel] Message simulated (sandbox): ${action}`);
+      console.log(`[Optix] Message simulated (sandbox): ${action}`);
     }
   }
 
@@ -174,9 +174,9 @@ export class OptiChannelService {
         app_session_id: sessionId,
         allocations: finalAllocations || [],
       });
-      console.log(`[OptiChannel] Session ${sessionId.slice(0, 10)}... closed`);
+      console.log(`[Optix] Session ${sessionId.slice(0, 10)}... closed`);
     } catch (error) {
-      console.log(`[OptiChannel] Session close simulated (sandbox)`);
+      console.log(`[Optix] Session close simulated (sandbox)`);
     }
 
     this.activeSessions.delete(sessionId);
@@ -196,7 +196,7 @@ export class OptiChannelService {
     quote: OptionQuote;
   }> {
     console.log('\n' + '='.repeat(50));
-    console.log('OptiChannel Full Trade Simulation');
+    console.log('Optix Full Trade Simulation');
     console.log('='.repeat(50) + '\n');
 
     const currentPrice = await this.getCurrentEthPrice();

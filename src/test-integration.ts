@@ -1,5 +1,5 @@
 /**
- * OptiChannel Integration Test
+ * Optix Integration Test
  * Tests the complete flow: Backend API + On-Chain Contract + Pyth Oracle
  */
 
@@ -13,7 +13,7 @@ import { PythClient } from './lib/pyth/client.js';
 const API_URL = process.env.API_URL || 'http://localhost:8081';
 
 // Contract ABIs
-const OPTICHANNEL_ABI = [
+const OPTIX_ABI = [
   { type: 'function', name: 'balances', inputs: [{ name: '', type: 'address' }], outputs: [{ type: 'uint256' }], stateMutability: 'view' },
   { type: 'function', name: 'MIN_DEPOSIT', inputs: [], outputs: [{ type: 'uint256' }], stateMutability: 'view' },
   { type: 'function', name: 'CHALLENGE_PERIOD', inputs: [], outputs: [{ type: 'uint256' }], stateMutability: 'view' },
@@ -41,7 +41,7 @@ async function testApiHealth(): Promise<boolean> {
 
 async function main() {
   console.log('═══════════════════════════════════════════════════════════════════');
-  console.log('  OPTICHANNEL INTEGRATION TEST');
+  console.log('  OPTIX INTEGRATION TEST');
   console.log('  Backend + On-Chain + Pyth Oracle');
   console.log('═══════════════════════════════════════════════════════════════════\n');
 
@@ -62,7 +62,7 @@ async function main() {
 
   console.log('Configuration:');
   console.log(`  RPC: ${rpcUrl.substring(0, 50)}...`);
-  console.log(`  Contract: ${DEFAULT_CONTRACTS.optiChannel}`);
+  console.log(`  Contract: ${DEFAULT_CONTRACTS.optix}`);
   console.log(`  Wallet: ${walletAddress || 'Not configured'}\n`);
 
   let allPassed = true;
@@ -75,7 +75,7 @@ async function main() {
   console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
 
   try {
-    const code = await publicClient.getCode({ address: DEFAULT_CONTRACTS.optiChannel });
+    const code = await publicClient.getCode({ address: DEFAULT_CONTRACTS.optix });
     if (!code || code === '0x') {
       console.log('   ✗ Contract not deployed!');
       allPassed = false;
@@ -83,22 +83,22 @@ async function main() {
       console.log(`   ✓ Contract deployed (${(code.length - 2) / 2} bytes)`);
 
       const minDeposit = await publicClient.readContract({
-        address: DEFAULT_CONTRACTS.optiChannel,
-        abi: OPTICHANNEL_ABI,
+        address: DEFAULT_CONTRACTS.optix,
+        abi: OPTIX_ABI,
         functionName: 'MIN_DEPOSIT',
       });
       console.log(`   ✓ MIN_DEPOSIT: ${formatUnits(minDeposit as bigint, 6)} USDC`);
 
       const challengePeriod = await publicClient.readContract({
-        address: DEFAULT_CONTRACTS.optiChannel,
-        abi: OPTICHANNEL_ABI,
+        address: DEFAULT_CONTRACTS.optix,
+        abi: OPTIX_ABI,
         functionName: 'CHALLENGE_PERIOD',
       });
       console.log(`   ✓ CHALLENGE_PERIOD: ${Number(challengePeriod) / 3600} hours`);
 
       const usdcAddr = await publicClient.readContract({
-        address: DEFAULT_CONTRACTS.optiChannel,
-        abi: OPTICHANNEL_ABI,
+        address: DEFAULT_CONTRACTS.optix,
+        abi: OPTIX_ABI,
         functionName: 'usdc',
       });
       const usdcMatch = usdcAddr === DEFAULT_CONTRACTS.usdc;
@@ -106,8 +106,8 @@ async function main() {
       if (!usdcMatch) allPassed = false;
 
       const pythAddr = await publicClient.readContract({
-        address: DEFAULT_CONTRACTS.optiChannel,
-        abi: OPTICHANNEL_ABI,
+        address: DEFAULT_CONTRACTS.optix,
+        abi: OPTIX_ABI,
         functionName: 'pyth',
       });
       const pythMatch = pythAddr === DEFAULT_CONTRACTS.pyth;
@@ -169,12 +169,12 @@ async function main() {
       console.log(`   ✓ USDC Balance: ${formatUnits(usdcBalance, 6)} USDC`);
 
       const optiBalance = await publicClient.readContract({
-        address: DEFAULT_CONTRACTS.optiChannel,
-        abi: OPTICHANNEL_ABI,
+        address: DEFAULT_CONTRACTS.optix,
+        abi: OPTIX_ABI,
         functionName: 'balances',
         args: [walletAddress],
       }) as bigint;
-      console.log(`   ✓ OptiChannel Balance: ${formatUnits(optiBalance, 6)} USDC`);
+      console.log(`   ✓ Optix Balance: ${formatUnits(optiBalance, 6)} USDC`);
 
       if (ethBalance === 0n) {
         console.log('   ⚠ No ETH - get from faucet for gas');
@@ -265,7 +265,7 @@ async function main() {
   console.log(`  [Wallet]    ${walletAddress ? 'Configured' : 'Not configured'}\n`);
 
   console.log('Links:');
-  console.log(`  Contract:    https://sepolia.etherscan.io/address/${DEFAULT_CONTRACTS.optiChannel}`);
+  console.log(`  Contract:    https://sepolia.etherscan.io/address/${DEFAULT_CONTRACTS.optix}`);
   console.log('  USDC Faucet: https://faucet.circle.com/');
   console.log('  ETH Faucet:  https://cloud.google.com/application/web3/faucet/ethereum/sepolia\n');
 
