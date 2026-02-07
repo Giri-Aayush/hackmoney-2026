@@ -237,21 +237,38 @@ export class OptixServer {
    * Start the server
    */
   async start(): Promise<void> {
+    let dbLoaded = false;
+    let protocolReady = false;
+
     // Load persisted data from Supabase
     try {
       await state.loadDataFromDb();
       console.log('[Server] ✓ Data loaded from database');
+      dbLoaded = true;
     } catch (error) {
-      console.error('[Server] Warning: Failed to load data from database:', error);
-      console.log('[Server] Continuing with empty state...');
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error('[Server] ✗ Failed to load data from database:', msg);
+      console.log('[Server] Continuing with empty state (trading history will not persist)');
     }
 
     // Initialize protocol options (Binance-style standardized contracts)
     try {
       const optionsCount = await state.initializeProtocolOptions();
-      console.log(`[Server] Protocol options ready: ${optionsCount} contracts`);
+      console.log(`[Server] ✓ Protocol options ready: ${optionsCount} contracts`);
+      protocolReady = true;
     } catch (error) {
-      console.error('[Server] Failed to initialize protocol options:', error);
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error('[Server] ✗ Failed to initialize protocol options:', msg);
+      console.error('[Server] Options trading will not work. Check PRIVATE_KEY environment variable.');
+    }
+
+    // Log initialization status
+    if (!dbLoaded || !protocolReady) {
+      console.log('');
+      console.log('[Server] ⚠ SERVER STARTED WITH WARNINGS:');
+      if (!dbLoaded) console.log('  - Database not connected');
+      if (!protocolReady) console.log('  - Protocol options not initialized');
+      console.log('');
     }
 
     return new Promise((resolve) => {

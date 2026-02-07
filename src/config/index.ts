@@ -1,5 +1,34 @@
 import 'dotenv/config';
 
+/**
+ * Validate that required environment variables are present.
+ * Called lazily when private key is actually needed (not at startup).
+ */
+export function validatePrivateKey(): string {
+  const privateKey = process.env.PRIVATE_KEY;
+  if (!privateKey) {
+    throw new Error('PRIVATE_KEY environment variable is required');
+  }
+  if (!privateKey.startsWith('0x') || privateKey.length !== 66) {
+    throw new Error('PRIVATE_KEY must be a valid hex string (0x + 64 hex chars)');
+  }
+  return privateKey;
+}
+
+/**
+ * Validate Supabase configuration
+ */
+export function validateSupabase(): { url: string; serviceKey: string } {
+  const url = process.env.SUPABASE_URL;
+  const serviceKey = process.env.SUPABASE_SERVICE_KEY;
+
+  if (!url || !serviceKey) {
+    throw new Error('SUPABASE_URL and SUPABASE_SERVICE_KEY are required');
+  }
+
+  return { url, serviceKey };
+}
+
 export const config = {
   // Yellow Network
   yellow: {

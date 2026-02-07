@@ -136,7 +136,9 @@ export function OptionsTable() {
               <TableBody>
                 {filteredOptions.map((option) => {
                   const moneyness = getOptionMoneyness(option);
-                  const isExpired = option.expiry < Date.now();
+                  // Normalize expiry to milliseconds (backend sends seconds)
+                  const expiryMs = option.expiry < 1e12 ? option.expiry * 1000 : option.expiry;
+                  const isExpired = expiryMs < Date.now();
 
                   return (
                     <TableRow key={option.id}>

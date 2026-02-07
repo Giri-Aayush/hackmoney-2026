@@ -129,8 +129,10 @@ export class BalanceTracker {
     entry.lastUpdated = Date.now();
     console.log(`[Balance] Deposit: ${address.slice(0, 10)}... +$${amount.toFixed(2)} (available: $${entry.available.toFixed(2)})`);
 
-    // Persist to database asynchronously
-    this.persistToDb(address, entry).catch(console.error);
+    // Persist to database asynchronously (fire-and-forget)
+    this.persistToDb(address, entry).catch(err => {
+      console.error(`[Balance] Failed to persist deposit for ${address.slice(0, 10)}:`, err);
+    });
 
     return { ...entry };
   }
@@ -149,8 +151,10 @@ export class BalanceTracker {
     entry.lastUpdated = Date.now();
     console.log(`[Balance] Withdraw: ${address.slice(0, 10)}... -$${amount.toFixed(2)} (available: $${entry.available.toFixed(2)})`);
 
-    // Persist to database asynchronously
-    this.persistToDb(address, entry).catch(console.error);
+    // Persist to database asynchronously (fire-and-forget)
+    this.persistToDb(address, entry).catch(err => {
+      console.error(`[Balance] Failed to persist withdrawal for ${address.slice(0, 10)}:`, err);
+    });
 
     return { success: true, entry: { ...entry } };
   }
@@ -168,8 +172,10 @@ export class BalanceTracker {
     entry.lastUpdated = Date.now();
     console.log(`[Balance] Premium deducted: ${buyer.slice(0, 10)}... -$${premium.toFixed(2)} (available: $${entry.available.toFixed(2)})`);
 
-    // Persist to database asynchronously
-    this.persistToDb(buyer, entry).catch(console.error);
+    // Persist to database asynchronously (fire-and-forget)
+    this.persistToDb(buyer, entry).catch(err => {
+      console.error(`[Balance] Failed to persist premium deduction for ${buyer.slice(0, 10)}:`, err);
+    });
 
     return { success: true, newBalance: entry.available };
   }
@@ -183,8 +189,10 @@ export class BalanceTracker {
     entry.lastUpdated = Date.now();
     console.log(`[Balance] Premium credited: ${writer.slice(0, 10)}... +$${premium.toFixed(2)} (available: $${entry.available.toFixed(2)})`);
 
-    // Persist to database asynchronously
-    this.persistToDb(writer, entry).catch(console.error);
+    // Persist to database asynchronously (fire-and-forget)
+    this.persistToDb(writer, entry).catch(err => {
+      console.error(`[Balance] Failed to persist premium credit for ${writer.slice(0, 10)}:`, err);
+    });
 
     return entry.available;
   }
@@ -202,8 +210,10 @@ export class BalanceTracker {
     entry.lastUpdated = Date.now();
     console.log(`[Balance] Collateral locked: ${writer.slice(0, 10)}... $${amount.toFixed(2)} (available: $${entry.available.toFixed(2)}, locked: $${entry.locked.toFixed(2)})`);
 
-    // Persist to database asynchronously
-    this.persistToDb(writer, entry).catch(console.error);
+    // Persist to database asynchronously (fire-and-forget)
+    this.persistToDb(writer, entry).catch(err => {
+      console.error(`[Balance] Failed to persist collateral lock for ${writer.slice(0, 10)}:`, err);
+    });
 
     return { success: true, newBalance: entry.available };
   }
@@ -221,8 +231,10 @@ export class BalanceTracker {
     entry.lastUpdated = Date.now();
     console.log(`[Balance] Collateral released: ${writer.slice(0, 10)}... +$${netReturn.toFixed(2)} (available: $${entry.available.toFixed(2)})`);
 
-    // Persist to database asynchronously
-    this.persistToDb(writer, entry).catch(console.error);
+    // Persist to database asynchronously (fire-and-forget)
+    this.persistToDb(writer, entry).catch(err => {
+      console.error(`[Balance] Failed to persist collateral release for ${writer.slice(0, 10)}:`, err);
+    });
 
     return entry.available;
   }
@@ -236,8 +248,10 @@ export class BalanceTracker {
     entry.lastUpdated = Date.now();
     console.log(`[Balance] Payout credited: ${holder.slice(0, 10)}... +$${payout.toFixed(2)} (available: $${entry.available.toFixed(2)})`);
 
-    // Persist to database asynchronously
-    this.persistToDb(holder, entry).catch(console.error);
+    // Persist to database asynchronously (fire-and-forget)
+    this.persistToDb(holder, entry).catch(err => {
+      console.error(`[Balance] Failed to persist payout credit for ${holder.slice(0, 10)}:`, err);
+    });
 
     return entry.available;
   }
@@ -275,15 +289,17 @@ export class BalanceTracker {
     this.loadedFromDb.delete(normalized);
     console.log(`[Balance] Reset balance for ${address.slice(0, 10)}...`);
 
-    // Reset in database asynchronously
+    // Reset in database asynchronously (fire-and-forget)
     supabase
       .from('users')
       .update({ balance: 0, total_deposited: 0, total_withdrawn: 0 })
       .eq('wallet_address', normalized)
       .then((result: { error: unknown }) => {
-        if (result.error) console.error(`[Balance] Error resetting in DB:`, result.error);
+        if (result.error) console.error(`[Balance] Error resetting in DB for ${address.slice(0, 10)}:`, result.error);
       })
-      .catch(console.error);
+      .catch((err: unknown) => {
+        console.error(`[Balance] Failed to reset balance in DB for ${address.slice(0, 10)}:`, err);
+      });
   }
 
   /**
@@ -302,8 +318,10 @@ export class BalanceTracker {
     this.loadedFromDb.add(normalized);
     console.log(`[Balance] Set balance for ${address.slice(0, 10)}... to $${amount.toFixed(2)}`);
 
-    // Persist to database asynchronously
-    this.persistToDb(address, entry).catch(console.error);
+    // Persist to database asynchronously (fire-and-forget)
+    this.persistToDb(address, entry).catch(err => {
+      console.error(`[Balance] Failed to persist setBalance for ${address.slice(0, 10)}:`, err);
+    });
 
     return { ...entry };
   }

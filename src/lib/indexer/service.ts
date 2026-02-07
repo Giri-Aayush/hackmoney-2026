@@ -236,8 +236,10 @@ export class EventIndexerService {
       }
     }, this.pollInterval);
 
-    // Also poll immediately
-    this.pollEvents().catch(console.error);
+    // Also poll immediately (fire-and-forget)
+    this.pollEvents().catch(err => {
+      console.error('[Indexer] Initial poll failed:', err);
+    });
   }
 
   /**

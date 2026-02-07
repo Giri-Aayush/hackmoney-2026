@@ -163,8 +163,10 @@ export class OptionsOrderBook {
       this.market.updateOpenInterest(strike, option.expiry, option.optionType, 1, premium);
     }
 
-    // Persist to database asynchronously
-    this.persistOption(option).catch(console.error);
+    // Persist to database asynchronously (fire-and-forget, errors logged internally)
+    this.persistOption(option).catch(err => {
+      console.error(`[OrderBook] Failed to persist option ${option.id.slice(0, 10)}:`, err);
+    });
 
     console.log(`[OrderBook] Option listed: ${option.id.slice(0, 10)}... by ${writer.slice(0, 10)}...`);
     return option;
@@ -207,9 +209,13 @@ export class OptionsOrderBook {
       });
     }
 
-    // Persist option update and record trade in database
-    this.persistOption(option).catch(console.error);
-    this.recordTrade(option, buyer).catch(console.error);
+    // Persist option update and record trade in database (fire-and-forget)
+    this.persistOption(option).catch(err => {
+      console.error(`[OrderBook] Failed to persist option update ${option.id.slice(0, 10)}:`, err);
+    });
+    this.recordTrade(option, buyer).catch(err => {
+      console.error(`[OrderBook] Failed to record trade for ${option.id.slice(0, 10)}:`, err);
+    });
 
     console.log(`[OrderBook] Option ${optionId.slice(0, 10)}... bought by ${buyer.slice(0, 10)}...`);
     return option;
@@ -308,8 +314,10 @@ export class OptionsOrderBook {
     listing.option.status = 'exercised';
     listing.isActive = false;
 
-    // Persist exercised option to database
-    this.persistOption(listing.option).catch(console.error);
+    // Persist exercised option to database (fire-and-forget)
+    this.persistOption(listing.option).catch(err => {
+      console.error(`[OrderBook] Failed to persist exercised option ${listing.option.id.slice(0, 10)}:`, err);
+    });
 
     return result;
   }

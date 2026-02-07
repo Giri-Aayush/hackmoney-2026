@@ -96,13 +96,11 @@ export class ProtocolOptionsGenerator {
 
     // Derive protocol address from private key
     const privateKey = protocolPrivateKey || config.wallet.privateKey;
-    if (privateKey) {
-      const account = privateKeyToAccount(privateKey as `0x${string}`);
-      this.protocolAddress = account.address;
-    } else {
-      // Fallback to a deterministic "protocol" address for demo
-      this.protocolAddress = getAddress('0x1234567890123456789012345678901234567890');
+    if (!privateKey) {
+      throw new Error('Protocol private key is required. Set PRIVATE_KEY environment variable.');
     }
+    const account = privateKeyToAccount(privateKey as `0x${string}`);
+    this.protocolAddress = account.address;
 
     console.log(`[Protocol] Options generator initialized for ${this.protocolAddress.slice(0, 10)}...`);
   }

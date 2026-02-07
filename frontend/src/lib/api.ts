@@ -280,8 +280,10 @@ class ApiClient {
     premium: number;
     amount: number;
   }): Promise<Option> {
+    // Normalize expiry to milliseconds (handles both seconds and milliseconds input)
+    const expiryMs = option.expiry < 1e12 ? option.expiry * 1000 : option.expiry;
     // Convert expiry timestamp to minutes from now
-    const expiryMinutes = Math.max(1, Math.round((option.expiry - Date.now()) / (1000 * 60)));
+    const expiryMinutes = Math.max(1, Math.round((expiryMs - Date.now()) / (1000 * 60)));
 
     // Transform to backend format
     const payload = {

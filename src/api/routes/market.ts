@@ -44,6 +44,7 @@ router.get('/depth/:optionId', (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to get order book depth',
+      timestamp: Date.now(),
     });
   }
 });
@@ -96,6 +97,7 @@ router.get('/prices/:optionId', async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to get market prices',
+      timestamp: Date.now(),
     });
   }
 });
@@ -145,6 +147,7 @@ router.get('/ticker/:optionId', async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to get ticker',
+      timestamp: Date.now(),
     });
   }
 });
@@ -177,6 +180,7 @@ router.get('/open-interest', (_req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to get open interest',
+      timestamp: Date.now(),
     });
   }
 });
@@ -199,6 +203,7 @@ router.get('/volume', (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to get volume stats',
+      timestamp: Date.now(),
     });
   }
 });
@@ -226,6 +231,7 @@ router.get('/trades', (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to get trades',
+      timestamp: Date.now(),
     });
   }
 });
@@ -267,6 +273,7 @@ router.post('/orders/limit', (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to place limit order',
+      timestamp: Date.now(),
     });
   }
 });
@@ -311,6 +318,7 @@ router.post('/orders/market', (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to place market order',
+      timestamp: Date.now(),
     });
   }
 });
@@ -344,6 +352,7 @@ router.delete('/orders/:orderId', (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to cancel order',
+      timestamp: Date.now(),
     });
   }
 });
@@ -378,6 +387,7 @@ router.get('/orders', (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to get orders',
+      timestamp: Date.now(),
     });
   }
 });
@@ -403,6 +413,7 @@ router.get('/risk', (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to get risk data',
+      timestamp: Date.now(),
     });
   }
 });
@@ -429,6 +440,7 @@ router.get('/liquidations', (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       error: error instanceof Error ? error.message : 'Failed to get liquidation history',
+      timestamp: Date.now(),
     });
   }
 });
